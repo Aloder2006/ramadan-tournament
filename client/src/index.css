@@ -3623,3 +3623,36 @@ body {
   border-color: var(--gold-border);
   background: var(--bg-base);
 }
+
+.navbar-logo {
+  margin-left: 0.5rem;
+  font-size: 1.6rem;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 5px rgba(226, 176, 74, 0.5));
+}
+
+.bottom-admin-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--gold-border);
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: var(--t);
+}
+
+.bottom-admin-btn:hover {
+  color: var(--gold);
+  transform: scale(1.1);
+  background: var(--bg-card);
+}
