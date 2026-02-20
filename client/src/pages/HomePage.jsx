@@ -45,7 +45,6 @@ export default function HomePage() {
 
     if (loading) return (
         <div className="loading-screen">
-            <div className="splash-logo">{config.logoEmoji}</div>
             <div className="splash-name">{config.name}</div>
             <div className="loader" />
         </div>
@@ -112,7 +111,6 @@ export default function HomePage() {
                     {champion && (
                         <div className="champion-banner">
                             <div className="champion-inner">
-                                <div className="champion-trophy">🏆</div>
                                 <div>
                                     <div className="champion-label">بطل البطولة</div>
                                     <div className="champion-name">{champion.name}</div>
@@ -164,7 +162,6 @@ export default function HomePage() {
                         })}
                         {knockoutMatches.length === 0 && !(settings?.bracketSlots?.some(s => s.team)) && (
                             <div className="ko-empty-state">
-                                <div className="ko-empty-icon">🏆</div>
                                 <p>لم يتم إعداد قرعة الإقصاء بعد</p>
                             </div>
                         )}

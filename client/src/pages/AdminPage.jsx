@@ -375,12 +375,12 @@ export default function AdminPage({ onLogout }) {
     const groupMatches = matches.filter(m => m.phase !== 'knockout');
 
     const tabs = [
-        { id: 'teams', label: '⚽ الفرق' },
-        { id: 'group-matches', label: '📊 مباريات المجموعات' },
-        { id: 'knockout', label: '🏆 الإقصاء' },
-        { id: 'export', label: '📸 تصدير' },
-        { id: 'settings', label: '🎨 إعدادات البطولة' },
-        { id: 'reset', label: '⚠️ إعادة تعيين' },
+        { id: 'teams', label: 'الفرق' },
+        { id: 'group-matches', label: 'مباريات المجموعات' },
+        { id: 'knockout', label: 'الإقصاء' },
+        { id: 'export', label: 'تصدير' },
+        { id: 'settings', label: 'الإعدادات' },
+        { id: 'reset', label: 'إعادة تعيين' },
     ];
 
     return (
@@ -388,8 +388,8 @@ export default function AdminPage({ onLogout }) {
             <header className="admin-header">
                 <div className="admin-header-inner">
                     <div>
-                        <h1 className="admin-title">⚙️ لوحة الإدارة</h1>
-                        <p className="admin-subtitle">{settings?.phase === 'knockout' ? '🟢 مرحلة الإقصاء' : '🟡 دور المجموعات'} · {settings?.tournamentName || config.name}</p>
+                        <h1 className="admin-title">لوحة الإدارة</h1>
+                        <p className="admin-subtitle">{settings?.phase === 'knockout' ? 'مرحلة الإقصاء' : 'دور المجموعات'} · {settings?.tournamentName || config.name}</p>
                     </div>
                     <div className="admin-header-actions">
                         <a href="/" className="btn btn-ghost btn-sm">الرئيسية</a>
