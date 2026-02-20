@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { toggleToday, saveResult, createMatch, deleteMatch, updateMatchDate } from '../services/api';
+import { updateMatch, createMatch, deleteMatch } from '../services/api';
 
 const GROUPS = ['أ', 'ب', 'ج', 'د'];
 const KO_ROUNDS = ['ربع النهائي', 'نصف النهائي', 'نهائي الترتيب', 'النهائي'];
 
 const formatLocalDate = (d) => {
     if (!d) return '';
-    // Convert ISO to datetime-local format for the input
     const dt = new Date(d);
     const pad = (n) => String(n).padStart(2, '0');
     return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
@@ -19,87 +18,177 @@ const displayDate = (d) => {
     });
 };
 
-function ResultForm({ match, onResultSaved }) {
+/* ──────────────────────────────────────────
+   UNIFIED EDIT MODAL
+────────────────────────────────────────── */
+function EditMatchModal({ match, onClose, onSaved }) {
+    const [matchDate, setMatchDate] = useState(formatLocalDate(match.matchDate));
+    const [status, setStatus] = useState(match.status);
     const [s1, setS1] = useState(match.score1 ?? '');
     const [s2, setS2] = useState(match.score2 ?? '');
     const [rc1, setRc1] = useState(match.redCards1 ?? 0);
     const [rc2, setRc2] = useState(match.redCards2 ?? 0);
-    const [loading, setLoading] = useState(false);
+    const [hasPen, setHasPen] = useState(match.hasPenalties || false);
+    const [p1, setP1] = useState(match.penaltyScore1 ?? '');
+    const [p2, setP2] = useState(match.penaltyScore2 ?? '');
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
+    const isDraw = s1 !== '' && s2 !== '' && Number(s1) === Number(s2);
+    const isKO = match.phase === 'knockout';
+
     const handleSave = async () => {
-        if (s1 === '' || s2 === '') return setError('أدخل الأهداف');
-        setLoading(true);
         setError('');
+        if (status === 'Completed' && (s1 === '' || s2 === ''))
+            return setError('أدخل النتيجة أو غيّر الحالة إلى "قيد الانتظار"');
+        setSaving(true);
         try {
-            const res = await saveResult(match._id, s1, s2, rc1, rc2);
-            if (!res.match && res.message && !res.message.includes('بنجاح')) throw new Error(res.message);
-            if (onResultSaved) onResultSaved();
+            const payload = {
+                matchDate: matchDate || null,
+                status,
+                score1: status === 'Completed' ? Number(s1) : undefined,
+                score2: status === 'Completed' ? Number(s2) : undefined,
+                redCards1: Number(rc1) || 0,
+                redCards2: Number(rc2) || 0,
+            };
+            if (isKO && status === 'Completed' && isDraw && hasPen) {
+                payload.hasPenalties = true;
+                payload.penaltyScore1 = Number(p1) || 0;
+                payload.penaltyScore2 = Number(p2) || 0;
+            } else {
+                payload.hasPenalties = false;
+            }
+            const res = await updateMatch(match._id, payload);
+            if (res.message && !res.match) throw new Error(res.message);
+            onSaved?.();
+            onClose();
         } catch (err) {
             setError(err.message || 'حدث خطأ');
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
     return (
-        <div className="result-form">
-            <div className="score-row">
-                <input type="number" min="0" className="score-input" placeholder="0" value={s1} onChange={(e) => setS1(e.target.value)} />
-                <span className="score-sep">-</span>
-                <input type="number" min="0" className="score-input" placeholder="0" value={s2} onChange={(e) => setS2(e.target.value)} />
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3 className="modal-title">✏️ تعديل المباراة</h3>
+                    <button className="modal-close-btn" onClick={onClose}>✕</button>
+                </div>
+
+                <div className="modal-teams-display">
+                    <span className="modal-team">{match.team1?.name}</span>
+                    <span className="modal-vs">VS</span>
+                    <span className="modal-team">{match.team2?.name}</span>
+                </div>
+
+                <div className="modal-body">
+                    {/* Date */}
+                    <div className="form-group">
+                        <label className="form-label">📅 تاريخ ووقت المباراة</label>
+                        <input
+                            type="datetime-local"
+                            className="form-input"
+                            value={matchDate}
+                            onChange={(e) => setMatchDate(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Status */}
+                    <div className="form-group">
+                        <label className="form-label">الحالة</label>
+                        <div className="status-toggle-row">
+                            <button
+                                type="button"
+                                className={`status-toggle-btn ${status === 'Pending' ? 'active-pending' : ''}`}
+                                onClick={() => setStatus('Pending')}
+                            >⏳ قيد الانتظار</button>
+                            <button
+                                type="button"
+                                className={`status-toggle-btn ${status === 'Completed' ? 'active-done' : ''}`}
+                                onClick={() => setStatus('Completed')}
+                            >✅ منتهية</button>
+                        </div>
+                    </div>
+
+                    {/* Score — only if Completed */}
+                    {status === 'Completed' && (
+                        <>
+                            <div className="form-group">
+                                <label className="form-label">النتيجة</label>
+                                <div className="modal-score-row">
+                                    <div className="modal-score-side">
+                                        <span className="modal-score-label">{match.team1?.name}</span>
+                                        <input type="number" min="0" className="score-input score-input-lg" value={s1}
+                                            onChange={(e) => setS1(e.target.value)} placeholder="0" />
+                                    </div>
+                                    <span className="score-dash">-</span>
+                                    <div className="modal-score-side">
+                                        <span className="modal-score-label">{match.team2?.name}</span>
+                                        <input type="number" min="0" className="score-input score-input-lg" value={s2}
+                                            onChange={(e) => setS2(e.target.value)} placeholder="0" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Red Cards */}
+                            <div className="form-group">
+                                <label className="form-label">🟥 البطاقات الحمراء</label>
+                                <div className="modal-score-row">
+                                    <div className="modal-score-side">
+                                        <span className="modal-score-label">{match.team1?.name}</span>
+                                        <input type="number" min="0" max="11" className="score-input" value={rc1}
+                                            onChange={(e) => setRc1(e.target.value)} />
+                                    </div>
+                                    <span className="score-dash">—</span>
+                                    <div className="modal-score-side">
+                                        <span className="modal-score-label">{match.team2?.name}</span>
+                                        <input type="number" min="0" max="11" className="score-input" value={rc2}
+                                            onChange={(e) => setRc2(e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Penalties — only for KO draws */}
+                            {isKO && isDraw && (
+                                <div className="form-group">
+                                    <label className="form-label ko-pen-label">
+                                        <input type="checkbox" checked={hasPen}
+                                            onChange={(e) => setHasPen(e.target.checked)} />
+                                        🥅 ضربات جزاء
+                                    </label>
+                                    {hasPen && (
+                                        <div className="modal-score-row" style={{ marginTop: '0.5rem' }}>
+                                            <input type="number" min="0" className="score-input" value={p1}
+                                                onChange={(e) => setP1(e.target.value)} placeholder="0" />
+                                            <span className="score-dash">-</span>
+                                            <input type="number" min="0" className="score-input" value={p2}
+                                                onChange={(e) => setP2(e.target.value)} placeholder="0" />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {error && <p className="alert alert-error">{error}</p>}
+                </div>
+
+                <div className="modal-footer">
+                    <button className="btn btn-ghost btn-sm" onClick={onClose}>إلغاء</button>
+                    <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+                        {saving ? '⏳ جاري الحفظ...' : '💾 حفظ التعديلات'}
+                    </button>
+                </div>
             </div>
-            <div className="red-cards-row">
-                <label className="rc-label">🟥<input type="number" min="0" max="11" className="score-input rc-input" value={rc1} onChange={(e) => setRc1(e.target.value)} /></label>
-                <span className="rc-sep">ك</span>
-                <label className="rc-label"><input type="number" min="0" max="11" className="score-input rc-input" value={rc2} onChange={(e) => setRc2(e.target.value)} />🟥</label>
-            </div>
-            <button className="btn btn-success btn-xs" onClick={handleSave} disabled={loading}>
-                {loading ? '⏳' : match.status === 'Completed' ? '✏️' : '💾'}
-            </button>
-            {error && <span className="inline-error">{error}</span>}
         </div>
     );
 }
 
-function DateCell({ match, onRefresh }) {
-    const [editing, setEditing] = useState(false);
-    const [val, setVal] = useState(formatLocalDate(match.matchDate));
-    const [saving, setSaving] = useState(false);
-
-    const save = async () => {
-        setSaving(true);
-        await updateMatchDate(match._id, val || null);
-        setSaving(false);
-        setEditing(false);
-        onRefresh?.();
-    };
-
-    if (editing) {
-        return (
-            <div className="date-cell-edit">
-                <input
-                    type="datetime-local"
-                    className="form-input"
-                    style={{ fontSize: '0.75rem', padding: '0.3rem' }}
-                    value={val}
-                    onChange={(e) => setVal(e.target.value)}
-                />
-                <button className="btn btn-success btn-xs" onClick={save} disabled={saving}>✓</button>
-                <button className="btn btn-ghost btn-xs" onClick={() => setEditing(false)}>✕</button>
-            </div>
-        );
-    }
-
-    return (
-        <div className="date-cell" onClick={() => setEditing(true)} title="انقر للتعديل" style={{ cursor: 'pointer' }}>
-            {match.matchDate
-                ? <span className="date-text">📅 {displayDate(match.matchDate)}</span>
-                : <span className="date-placeholder">+ تاريخ</span>}
-        </div>
-    );
-}
-
+/* ──────────────────────────────────────────
+   MAIN MatchesManager
+────────────────────────────────────────── */
 export default function MatchesManager({ matches, teams, onRefresh, defaultPhase }) {
     const [showAddForm, setShowAddForm] = useState(false);
     const [newMatch, setNewMatch] = useState({
@@ -110,15 +199,8 @@ export default function MatchesManager({ matches, teams, onRefresh, defaultPhase
         matchDate: '',
     });
     const [addError, setAddError] = useState('');
-    const [togglingId, setTogglingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
-
-
-    const handleToggleToday = async (id) => {
-        setTogglingId(id);
-        try { await toggleToday(id); onRefresh?.(); } catch (e) { console.error(e); }
-        setTogglingId(null);
-    };
+    const [editingMatch, setEditingMatch] = useState(null);
 
     const handleDeleteMatch = async (id) => {
         if (!window.confirm('هل تريد حذف هذه المباراة؟ سيتم عكس الإحصائيات إذا كانت مكتملة.')) return;
@@ -149,124 +231,133 @@ export default function MatchesManager({ matches, teams, onRefresh, defaultPhase
     const set = (field) => (e) => setNewMatch((p) => ({ ...p, [field]: e.target.value }));
 
     return (
-        <div className="card">
-            <div className="card-title-row">
-                <h2 className="card-title"><span className="icon">📋</span> إدارة المباريات</h2>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(!showAddForm)}>
-                    {showAddForm ? '✕ إغلاق' : '+ مباراة جديدة'}
-                </button>
-            </div>
-
-            {showAddForm && (
-                <form onSubmit={handleAddMatch} className="add-match-form">
-                    <div className="form-group">
-                        <label className="form-label">المرحلة</label>
-                        <select className="form-select" value={newMatch.phase} onChange={set('phase')}>
-                            <option value="groups">مجموعات</option>
-                            <option value="knockout">إقصاء</option>
-                        </select>
-                    </div>
-                    {newMatch.phase === 'groups' ? (
-                        <div className="form-group">
-                            <label className="form-label">المجموعة</label>
-                            <select className="form-select" value={newMatch.group} onChange={set('group')}>
-                                {GROUPS.map((g) => <option key={g} value={g}>المجموعة {g}</option>)}
-                            </select>
-                        </div>
-                    ) : (
-                        <div className="form-group">
-                            <label className="form-label">الدور</label>
-                            <select className="form-select" value={newMatch.knockoutRound} onChange={set('knockoutRound')}>
-                                <option value="">-- اختر --</option>
-                                {KO_ROUNDS.map((r) => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                        </div>
-                    )}
-                    <div className="form-group">
-                        <label className="form-label">الفريق الأول</label>
-                        <select className="form-select" value={newMatch.team1} onChange={set('team1')}>
-                            <option value="">-- اختر --</option>
-                            {teams.map((t) => <option key={t._id} value={t._id}>{t.name} ({t.group})</option>)}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">الفريق الثاني</label>
-                        <select className="form-select" value={newMatch.team2} onChange={set('team2')}>
-                            <option value="">-- اختر --</option>
-                            {teams.map((t) => <option key={t._id} value={t._id}>{t.name} ({t.group})</option>)}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">📅 تاريخ ووقت المباراة</label>
-                        <input type="datetime-local" className="form-input" value={newMatch.matchDate} onChange={set('matchDate')} />
-                    </div>
-                    <button className="btn btn-primary" type="submit">➕ إضافة</button>
-                    {addError && <p className="alert alert-error" style={{ width: '100%' }}>{addError}</p>}
-                </form>
+        <>
+            {editingMatch && (
+                <EditMatchModal
+                    match={editingMatch}
+                    onClose={() => setEditingMatch(null)}
+                    onSaved={() => { setEditingMatch(null); onRefresh?.(); }}
+                />
             )}
 
-            <div className="table-wrapper">
-                <table className="matches-table">
-                    <thead>
-                        <tr>
-                            <th>المج</th>
-                            <th>الفريق ١</th>
-                            <th>النتيجة</th>
-                            <th>الفريق ٢</th>
-                            <th>التاريخ</th>
-                            <th>الحالة</th>
-                            <th>اليوم</th>
-                            <th>النتيجة</th>
-                            <th>حذف</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {matches.length === 0 ? (
-                            <tr><td colSpan="9" className="empty-cell">لا توجد مباريات</td></tr>
-                        ) : matches.map((match) => (
-                            <tr key={match._id} className={match.status === 'Completed' ? 'completed-row' : ''}>
-                                <td><span className="group-chip">{match.group}</span></td>
-                                <td className="team-cell-name">
-                                    {match.team1?.name}
-                                    {match.redCards1 > 0 && <span className="rc-mini">🟥{match.redCards1}</span>}
-                                </td>
-                                <td className="score-display">
-                                    {match.status === 'Completed' ? `${match.score1} - ${match.score2}` : '—'}
-                                </td>
-                                <td className="team-cell-name">
-                                    {match.redCards2 > 0 && <span className="rc-mini">🟥{match.redCards2}</span>}
-                                    {match.team2?.name}
-                                </td>
-                                <td><DateCell match={match} onRefresh={onRefresh} /></td>
-                                <td>
-                                    <span className={`status-badge ${match.status === 'Completed' ? 'completed' : 'pending'}`}>
-                                        {match.status === 'Completed' ? 'منتهية' : 'قيد الانتظار'}
-                                    </span>
-                                </td>
-                                <td>
-                                    {match.status !== 'Completed' && (
-                                        <button
-                                            className={`toggle-btn ${match.isToday ? 'active' : ''}`}
-                                            onClick={() => handleToggleToday(match._id)}
-                                            disabled={togglingId === match._id}
-                                        >
-                                            {match.isToday ? '👁' : '🚫'}
-                                        </button>
-                                    )}
-                                </td>
-                                <td><ResultForm match={match} onResultSaved={onRefresh} /></td>
-                                <td>
-                                    <button
-                                        className="btn btn-danger btn-xs"
-                                        onClick={() => handleDeleteMatch(match._id)}
-                                        disabled={deletingId === match._id}
-                                    >🗑️</button>
-                                </td>
+            <div className="card">
+                <div className="card-title-row">
+                    <h2 className="card-title"><span className="icon">📋</span> إدارة المباريات
+                        <span className="count-badge">{matches.length}</span>
+                    </h2>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(!showAddForm)}>
+                        {showAddForm ? '✕ إغلاق' : '+ مباراة جديدة'}
+                    </button>
+                </div>
+
+                {showAddForm && (
+                    <form onSubmit={handleAddMatch} className="add-match-form">
+                        <div className="form-group">
+                            <label className="form-label">المرحلة</label>
+                            <select className="form-select" value={newMatch.phase} onChange={set('phase')}>
+                                <option value="groups">مجموعات</option>
+                                <option value="knockout">إقصاء</option>
+                            </select>
+                        </div>
+                        {newMatch.phase === 'groups' ? (
+                            <div className="form-group">
+                                <label className="form-label">المجموعة</label>
+                                <select className="form-select" value={newMatch.group} onChange={set('group')}>
+                                    {GROUPS.map((g) => <option key={g} value={g}>المجموعة {g}</option>)}
+                                </select>
+                            </div>
+                        ) : (
+                            <div className="form-group">
+                                <label className="form-label">الدور</label>
+                                <select className="form-select" value={newMatch.knockoutRound} onChange={set('knockoutRound')}>
+                                    <option value="">-- اختر --</option>
+                                    {KO_ROUNDS.map((r) => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+                        )}
+                        <div className="form-group">
+                            <label className="form-label">الفريق الأول</label>
+                            <select className="form-select" value={newMatch.team1} onChange={set('team1')}>
+                                <option value="">-- اختر --</option>
+                                {teams.map((t) => <option key={t._id} value={t._id}>{t.name} ({t.group})</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">الفريق الثاني</label>
+                            <select className="form-select" value={newMatch.team2} onChange={set('team2')}>
+                                <option value="">-- اختر --</option>
+                                {teams.map((t) => <option key={t._id} value={t._id}>{t.name} ({t.group})</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">📅 تاريخ ووقت المباراة</label>
+                            <input type="datetime-local" className="form-input" value={newMatch.matchDate} onChange={set('matchDate')} />
+                        </div>
+                        <button className="btn btn-primary" type="submit">➕ إضافة</button>
+                        {addError && <p className="alert alert-error" style={{ width: '100%' }}>{addError}</p>}
+                    </form>
+                )}
+
+                <div className="table-wrapper">
+                    <table className="matches-table">
+                        <thead>
+                            <tr>
+                                <th>المج</th>
+                                <th>الفريق ١</th>
+                                <th>النتيجة</th>
+                                <th>الفريق ٢</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                                <th>تعديل</th>
+                                <th>حذف</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {matches.length === 0 ? (
+                                <tr><td colSpan="8" className="empty-cell">لا توجد مباريات</td></tr>
+                            ) : matches.map((match) => (
+                                <tr key={match._id} className={match.status === 'Completed' ? 'completed-row' : ''}>
+                                    <td><span className="group-chip">{match.group}</span></td>
+                                    <td className="team-cell-name">
+                                        {match.team1?.name}
+                                        {match.redCards1 > 0 && <span className="rc-mini">🟥{match.redCards1}</span>}
+                                    </td>
+                                    <td className="score-display">
+                                        {match.status === 'Completed'
+                                            ? <><b>{match.score1} - {match.score2}</b>{match.hasPenalties && <small className="pen-tag-sm"> (ج {match.penaltyScore1}-{match.penaltyScore2})</small>}</>
+                                            : '—'}
+                                    </td>
+                                    <td className="team-cell-name">
+                                        {match.redCards2 > 0 && <span className="rc-mini">🟥{match.redCards2}</span>}
+                                        {match.team2?.name}
+                                    </td>
+                                    <td>
+                                        {match.matchDate
+                                            ? <span className="date-text">📅 {displayDate(match.matchDate)}</span>
+                                            : <span className="date-placeholder">—</span>}
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge ${match.status === 'Completed' ? 'completed' : 'pending'}`}>
+                                            {match.status === 'Completed' ? 'منتهية' : 'قيد الانتظار'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button className="btn btn-ghost btn-xs" onClick={() => setEditingMatch(match)}
+                                            title="تعديل المباراة">✏️</button>
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="btn btn-danger btn-xs"
+                                            onClick={() => handleDeleteMatch(match._id)}
+                                            disabled={deletingId === match._id}
+                                        >{deletingId === match._id ? '⏳' : '🗑️'}</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        </>
     );
 }

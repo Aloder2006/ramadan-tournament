@@ -16,8 +16,16 @@ const settingsSchema = new mongoose.Schema({
             team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
         },
     ],
-    // Tournament name for sharing images
+    // ── Tournament Identity ──
     tournamentName: { type: String, default: 'دوري رمضان' },
+    subtitle: { type: String, default: '1447 هـ - 2026 م' },
+    logoEmoji: { type: String, default: '⚽' },
+    // ── Colors ──
+    primaryColor: { type: String, default: '#e2b04a' },
+    secondaryColor: { type: String, default: '#4caf80' },
+    // ── Fonts ──
+    logoFont: { type: String, default: 'Lalezar' },
+    bodyFont: { type: String, default: 'Tajawal' },
 });
 
 settingsSchema.statics.getSettings = async function () {

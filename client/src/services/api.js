@@ -16,9 +16,15 @@ export const deleteTeam = (id) => fetch(`/api/teams/${id}`, { method: 'DELETE' }
 export const getMatches = (phase) =>
     fetch(`/api/matches${phase ? `?phase=${phase}` : ''}`).then(r => r.json());
 export const getTodayMatches = () => fetch('/api/matches/today').then(r => r.json());
+export const getTomorrowMatches = () => fetch('/api/matches/tomorrow').then(r => r.json());
 export const getMatchHistory = () => fetch('/api/matches/history').then(r => r.json());
 export const createMatch = (data) =>
     fetch('/api/matches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+
+// Unified match update — handles date, result, red cards, etc. in one call
+export const updateMatch = (id, data) =>
+    fetch(`/api/matches/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+
 export const toggleToday = (id) =>
     fetch(`/api/matches/${id}/toggle-today`, { method: 'PATCH' }).then(r => r.json());
 export const updateMatchDate = (id, matchDate) =>
@@ -38,6 +44,10 @@ export const setBracketSlots = (slots) =>
     fetch('/api/settings/bracket-slots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slots }) }).then(r => r.json());
 export const setTournamentName = (name) =>
     fetch('/api/settings/tournament-name', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }).then(r => r.json());
+
+// Update all tournament info fields (name, subtitle, logo, colors, fonts)
+export const updateSettings = (data) =>
+    fetch('/api/settings/info', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
 
 // --- Reset ---
 export const resetGroups = () => fetch('/api/settings/reset/groups', { method: 'DELETE' }).then(r => r.json());

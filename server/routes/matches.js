@@ -5,7 +5,6 @@ const Team = require('../models/Team');
 
 // Helper: apply or reverse stats for a COMPLETED GROUP STAGE match
 async function applyMatchStats(match, { reverse = false } = {}) {
-    // Only apply stats for group stage matches
     if (match.phase === 'knockout') return;
 
     const mult = reverse ? -1 : 1;
@@ -32,12 +31,45 @@ async function applyMatchStats(match, { reverse = false } = {}) {
     ]);
 }
 
-// GET /api/matches/today
+// Helper: get date range for a given offset (0 = today, 1 = tomorrow) in UTC+2
+function getDateRange(offsetDays = 0) {
+    const now = new Date();
+    // UTC+2 offset
+    const localNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    const start = new Date(Date.UTC(
+        localNow.getUTCFullYear(),
+        localNow.getUTCMonth(),
+        localNow.getUTCDate() + offsetDays,
+        0, 0, 0, 0
+    ) - 2 * 60 * 60 * 1000);
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    return { start, end };
+}
+
+// GET /api/matches/today — all matches (pending + completed) for today
 router.get('/today', async (req, res) => {
     try {
-        const matches = await Match.find({ isToday: true, status: 'Pending' })
-            .populate('team1', 'name')
-            .populate('team2', 'name');
+        const { start, end } = getDateRange(0);
+        const matches = await Match.find({
+            matchDate: { $gte: start, $lt: end },
+        })
+            .populate('team1', 'name group')
+            .populate('team2', 'name group')
+            .sort({ matchDate: 1 });
+        res.json(matches);
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+// GET /api/matches/tomorrow — all matches for tomorrow
+router.get('/tomorrow', async (req, res) => {
+    try {
+        const { start, end } = getDateRange(1);
+        const matches = await Match.find({
+            matchDate: { $gte: start, $lt: end },
+        })
+            .populate('team1', 'name group')
+            .populate('team2', 'name group')
+            .sort({ matchDate: 1 });
         res.json(matches);
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
@@ -92,7 +124,81 @@ router.post('/', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// PATCH /api/matches/:id/toggle-today
+// PUT /api/matches/:id — UNIFIED update (date + result + all fields)
+router.put('/:id', async (req, res) => {
+    try {
+        const {
+            matchDate, score1, score2, redCards1, redCards2,
+            hasPenalties, penaltyScore1, penaltyScore2,
+            status, knockoutRound, group,
+        } = req.body;
+
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ message: 'المباراة غير موجودة' });
+
+        // Reverse previous stats if already completed
+        if (match.status === 'Completed' && status === 'Completed') {
+            await applyMatchStats(match, { reverse: true });
+        } else if (match.status === 'Completed' && status !== 'Completed') {
+            await applyMatchStats(match, { reverse: true });
+        }
+
+        // Update date
+        if (matchDate !== undefined) {
+            match.matchDate = matchDate ? new Date(matchDate) : null;
+        }
+
+        // Update score / status
+        if (status === 'Completed' && score1 !== undefined && score2 !== undefined) {
+            const s1 = parseInt(score1);
+            const s2 = parseInt(score2);
+            if (!isNaN(s1) && !isNaN(s2) && s1 >= 0 && s2 >= 0) {
+                match.score1 = s1;
+                match.score2 = s2;
+                match.status = 'Completed';
+                match.redCards1 = parseInt(redCards1) || 0;
+                match.redCards2 = parseInt(redCards2) || 0;
+
+                if (hasPenalties && s1 === s2) {
+                    match.hasPenalties = true;
+                    match.penaltyScore1 = parseInt(penaltyScore1) || 0;
+                    match.penaltyScore2 = parseInt(penaltyScore2) || 0;
+                } else {
+                    match.hasPenalties = false;
+                    match.penaltyScore1 = null;
+                    match.penaltyScore2 = null;
+                }
+            }
+        } else if (status === 'Pending') {
+            match.status = 'Pending';
+            match.score1 = null;
+            match.score2 = null;
+            match.hasPenalties = false;
+            match.penaltyScore1 = null;
+            match.penaltyScore2 = null;
+        }
+
+        if (knockoutRound !== undefined) match.knockoutRound = knockoutRound;
+        if (group !== undefined) match.group = group;
+        if (redCards1 !== undefined && match.status !== 'Completed') match.redCards1 = parseInt(redCards1) || 0;
+        if (redCards2 !== undefined && match.status !== 'Completed') match.redCards2 = parseInt(redCards2) || 0;
+
+        await match.save();
+
+        // Apply new stats if completed
+        if (match.status === 'Completed') {
+            await applyMatchStats(match, { reverse: false });
+        }
+
+        const updated = await Match.findById(match._id)
+            .populate('team1', 'name group')
+            .populate('team2', 'name group');
+
+        res.json({ message: 'تم تحديث المباراة بنجاح', match: updated });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+// PATCH /api/matches/:id/toggle-today  (kept for backward compat)
 router.patch('/:id/toggle-today', async (req, res) => {
     try {
         const match = await Match.findById(req.params.id);
@@ -105,7 +211,7 @@ router.patch('/:id/toggle-today', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// PATCH /api/matches/:id/date
+// PATCH /api/matches/:id/date (kept for backward compat)
 router.patch('/:id/date', async (req, res) => {
     try {
         const { matchDate } = req.body;
@@ -119,7 +225,7 @@ router.patch('/:id/date', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// PUT /api/matches/:id/result
+// PUT /api/matches/:id/result (kept for backward compat)
 router.put('/:id/result', async (req, res) => {
     try {
         const { score1, score2, redCards1, redCards2, hasPenalties, penaltyScore1, penaltyScore2 } = req.body;
@@ -132,7 +238,6 @@ router.put('/:id/result', async (req, res) => {
         const match = await Match.findById(req.params.id);
         if (!match) return res.status(404).json({ message: 'المباراة غير موجودة' });
 
-        // Reverse previous stats if already completed
         if (match.status === 'Completed') await applyMatchStats(match, { reverse: true });
 
         match.score1 = s1;
@@ -142,7 +247,6 @@ router.put('/:id/result', async (req, res) => {
         if (redCards1 !== undefined) match.redCards1 = parseInt(redCards1) || 0;
         if (redCards2 !== undefined) match.redCards2 = parseInt(redCards2) || 0;
 
-        // Penalties (only for knockout draws)
         if (hasPenalties && s1 === s2) {
             match.hasPenalties = true;
             match.penaltyScore1 = parseInt(penaltyScore1) || 0;

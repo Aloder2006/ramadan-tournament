@@ -91,7 +91,7 @@ router.put('/bracket-slots', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// PUT /api/settings/tournament-name
+// PUT /api/settings/tournament-name (kept for compat)
 router.put('/tournament-name', async (req, res) => {
     try {
         const { name } = req.body;
@@ -99,6 +99,26 @@ router.put('/tournament-name', async (req, res) => {
         settings.tournamentName = name || 'دوري رمضان';
         await settings.save();
         res.json({ tournamentName: settings.tournamentName });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+// PUT /api/settings/info — update all tournament identity fields
+router.put('/info', async (req, res) => {
+    try {
+        const {
+            tournamentName, subtitle, logoEmoji,
+            primaryColor, secondaryColor, logoFont, bodyFont,
+        } = req.body;
+        const settings = await Settings.getSettings();
+        if (tournamentName !== undefined) settings.tournamentName = tournamentName || 'دوري رمضان';
+        if (subtitle !== undefined) settings.subtitle = subtitle;
+        if (logoEmoji !== undefined) settings.logoEmoji = logoEmoji;
+        if (primaryColor !== undefined) settings.primaryColor = primaryColor;
+        if (secondaryColor !== undefined) settings.secondaryColor = secondaryColor;
+        if (logoFont !== undefined) settings.logoFont = logoFont;
+        if (bodyFont !== undefined) settings.bodyFont = bodyFont;
+        await settings.save();
+        res.json(settings);
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 

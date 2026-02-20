@@ -9,6 +9,7 @@ import AddTeamForm from '../components/AddTeamForm';
 import MatchesManager from '../components/MatchesManager';
 import KnockoutMatchManager from '../components/KnockoutMatchManager';
 import CanvasExporter from '../components/CanvasExporter';
+import TournamentSettingsEditor from '../components/TournamentSettingsEditor';
 import config from '../tournament.config';
 
 /* ──────────────────────────────────────────
@@ -258,6 +259,7 @@ export default function AdminPage({ onLogout }) {
         { id: 'group-matches', label: '📊 مباريات المجموعات' },
         { id: 'knockout', label: '🏆 الإقصاء' },
         { id: 'export', label: '📸 تصدير' },
+        { id: 'settings', label: '🎨 إعدادات البطولة' },
         { id: 'reset', label: '⚠️ إعادة تعيين' },
     ];
 
@@ -267,7 +269,7 @@ export default function AdminPage({ onLogout }) {
                 <div className="admin-header-inner">
                     <div>
                         <h1 className="admin-title">⚙️ لوحة الإدارة</h1>
-                        <p className="admin-subtitle">{settings?.phase === 'knockout' ? '🟢 مرحلة الإقصاء' : '🟡 دور المجموعات'} · {config.name}</p>
+                        <p className="admin-subtitle">{settings?.phase === 'knockout' ? '🟢 مرحلة الإقصاء' : '🟡 دور المجموعات'} · {settings?.tournamentName || config.name}</p>
                     </div>
                     <div className="admin-header-actions">
                         <a href="/" className="btn btn-ghost btn-sm">الرئيسية</a>
@@ -378,6 +380,15 @@ export default function AdminPage({ onLogout }) {
                     <h2 className="card-title"><span className="icon">📸</span> تصدير صور (1080×1080)</h2>
                     <p className="card-desc">انقر لتحميل PNG جاهز للنشر في وسائل التواصل</p>
                     <CanvasExporter teams={teams} matches={matches} settings={settings} />
+                </div>
+            )}
+
+            {/* ══ SETTINGS TAB ══ */}
+            {tab === 'settings' && (
+                <div className="card">
+                    <h2 className="card-title"><span className="icon">🎨</span> إعدادات البطولة</h2>
+                    <p className="card-desc">تعديل اسم البطولة، الشعار، الألوان، والخطوط — تُحفظ في قاعدة البيانات</p>
+                    <TournamentSettingsEditor settings={settings} onSaved={fetchAll} />
                 </div>
             )}
 

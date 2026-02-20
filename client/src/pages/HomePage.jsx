@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTeams, getTodayMatches, getMatchHistory, getSettings, getMatches } from '../services/api';
+import { getTeams, getTodayMatches, getTomorrowMatches, getMatchHistory, getSettings, getMatches } from '../services/api';
 import TodayMatches from '../components/TodayMatches';
+import TomorrowMatches from '../components/TomorrowMatches';
 import GroupTable from '../components/GroupTable';
 import MatchHistory from '../components/MatchHistory';
 import BracketTree from '../components/BracketTree';
@@ -11,6 +12,7 @@ import config from '../tournament.config';
 export default function HomePage() {
     const [teams, setTeams] = useState([]);
     const [todayMatches, setTodayMatches] = useState([]);
+    const [tomorrowMatches, setTomorrowMatches] = useState([]);
     const [history, setHistory] = useState([]);
     const [settings, setSettings] = useState(null);
     const [knockoutMatches, setKnockoutMatches] = useState([]);
@@ -21,11 +23,12 @@ export default function HomePage() {
     useEffect(() => {
         const load = async () => {
             try {
-                const [teamsData, todayData, historyData, settingsData, koData] = await Promise.all([
-                    getTeams(), getTodayMatches(), getMatchHistory(), getSettings(), getMatches('knockout'),
+                const [teamsData, todayData, tomorrowData, historyData, settingsData, koData] = await Promise.all([
+                    getTeams(), getTodayMatches(), getTomorrowMatches(), getMatchHistory(), getSettings(), getMatches('knockout'),
                 ]);
                 setTeams(Array.isArray(teamsData) ? teamsData : []);
                 setTodayMatches(Array.isArray(todayData) ? todayData : []);
+                setTomorrowMatches(Array.isArray(tomorrowData) ? tomorrowData : []);
                 setHistory(Array.isArray(historyData) ? historyData : []);
                 if (settingsData && !settingsData.message) {
                     setSettings(settingsData);
@@ -43,7 +46,12 @@ export default function HomePage() {
     }, []);
 
     if (loading) return (
-        <div className="loading-screen"><div className="loader" /><p>جاري التحميل...</p></div>
+        <div className="loading-screen">
+            <div className="splash-logo">{settings?.logoEmoji || config.logoEmoji}</div>
+            <div className="splash-name">{settings?.tournamentName || config.name}</div>
+            <div className="loader" />
+            <p>جاري التحميل...</p>
+        </div>
     );
 
     // Champion detection (penalty-aware)
@@ -60,8 +68,8 @@ export default function HomePage() {
             <header className="simple-navbar">
                 <div style={{ width: 24 }}></div>
                 <h1 className="simple-navbar-title">
-                    <span className="navbar-logo">{config.logoEmoji}</span>
-                    {config.name}
+                    <span className="navbar-logo">{settings?.logoEmoji || config.logoEmoji}</span>
+                    {settings?.tournamentName || config.name}
                 </h1>
                 <div style={{ width: 24 }}></div>
             </header>
@@ -91,6 +99,7 @@ export default function HomePage() {
             {view === 'groups' && (
                 <>
                     <TodayMatches matches={todayMatches.filter(m => m.phase !== 'knockout')} />
+                    <TomorrowMatches matches={tomorrowMatches.filter(m => m.phase !== 'knockout')} />
                     <section className="groups-section">
                         <h2 className="section-heading" style={{ marginBottom: '0.85rem' }}>📊 جداول المجموعات</h2>
                         <div className="groups-grid">
@@ -119,8 +128,9 @@ export default function HomePage() {
                         </div>
                     )}
 
-                    {/* Today's knockout matches */}
+                    {/* Today's and tomorrow's knockout matches */}
                     <TodayMatches matches={todayMatches.filter(m => m.phase === 'knockout')} title="🏆 مباريات الإقصاء اليوم" />
+                    <TomorrowMatches matches={tomorrowMatches.filter(m => m.phase === 'knockout')} />
 
                     {/* Visual Bracket */}
                     <div className="ko-bracket-desktop">
