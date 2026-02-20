@@ -8,7 +8,16 @@ const connectDB = require('./config/db');
 const app = express();
 
 // Connect to MongoDB
-connectDB();
+// Middleware to ensure DB is connected before handling requests (Critical for Vercel/Serverless)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error("❌ Database Connection Failed:", error);
+        res.status(500).json({ error: "Database Connection Failed" });
+    }
+});
 
 // Middleware
 app.use(cors());
