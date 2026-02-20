@@ -47,16 +47,6 @@ function MatchCard({ m, isTomorrow }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
                 {/* Team 1 */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '.4rem', minWidth: 0 }}>
-                    <div style={{
-                        width: 28, height: 28, borderRadius: '3px',
-                        background: w1 ? 'var(--gold-dim)' : 'var(--bg-elevated)',
-                        border: `1px solid ${w1 ? 'var(--gold-border)' : 'var(--border)'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '.72rem', fontWeight: 900, color: w1 ? 'var(--gold)' : 'var(--text-muted)',
-                        flexShrink: 0, fontFamily: 'Inter, sans-serif',
-                    }}>
-                        {m.team1?.name?.[0] || '?'}
-                    </div>
                     <span style={{
                         fontSize: '.88rem', fontWeight: w1 ? 900 : 700,
                         color: w1 ? 'var(--text-primary)' : 'var(--text-secondary)',
@@ -85,16 +75,6 @@ function MatchCard({ m, isTomorrow }) {
 
                 {/* Team 2 */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '.4rem', minWidth: 0, flexDirection: 'row-reverse' }}>
-                    <div style={{
-                        width: 28, height: 28, borderRadius: '3px',
-                        background: w2 ? 'var(--gold-dim)' : 'var(--bg-elevated)',
-                        border: `1px solid ${w2 ? 'var(--gold-border)' : 'var(--border)'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '.72rem', fontWeight: 900, color: w2 ? 'var(--gold)' : 'var(--text-muted)',
-                        flexShrink: 0, fontFamily: 'Inter, sans-serif',
-                    }}>
-                        {m.team2?.name?.[0] || '?'}
-                    </div>
                     <span style={{
                         fontSize: '.88rem', fontWeight: w2 ? 900 : 700,
                         color: w2 ? 'var(--text-primary)' : 'var(--text-secondary)',

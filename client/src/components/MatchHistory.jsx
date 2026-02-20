@@ -2,11 +2,12 @@ export default function MatchHistory({ matches }) {
     if (!matches || matches.length === 0) return null;
 
     // Sort by matchDate ascending, fallback to updatedAt
-    const sorted = [...matches].sort((a, b) => {
-        const da = new Date(a.matchDate || a.updatedAt || 0);
-        const db = new Date(b.matchDate || b.updatedAt || 0);
-        return da - db;
-    });
+// التعديل هنا: غيرنا da - db لـ db - da
+const sorted = [...matches].sort((a, b) => {
+    const da = new Date(a.matchDate || a.updatedAt || 0);
+    const db = new Date(b.matchDate || b.updatedAt || 0);
+    return db - da; // الأحدث (التاريخ الأكبر) ناقص الأقدم
+});
 
     // Group by formatted date label
     const grouped = sorted.reduce((acc, m) => {
@@ -58,17 +59,6 @@ export default function MatchHistory({ matches }) {
                                     }}>
                                         {/* Team 1 */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
-                                            <div style={{
-                                                width: 26, height: 26, borderRadius: '3px', flexShrink: 0,
-                                                background: w1 ? 'var(--gold-dim)' : 'var(--bg-elevated)',
-                                                border: `1px solid ${w1 ? 'var(--gold-border)' : 'var(--border)'}`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '.65rem', fontWeight: 900,
-                                                color: w1 ? 'var(--gold)' : 'var(--text-muted)',
-                                                fontFamily: 'Inter, sans-serif',
-                                            }}>
-                                                {m.team1?.name?.[0] || '?'}
-                                            </div>
                                             <span style={{
                                                 fontSize: '.84rem', fontWeight: w1 ? 900 : 700,
                                                 color: w1 ? 'var(--text-primary)' : 'var(--text-secondary)',
@@ -76,7 +66,7 @@ export default function MatchHistory({ matches }) {
                                             }}>{m.team1?.name}
                                                 {m.redCards1 > 0 && (
                                                     <span style={{ marginRight: '.3rem', fontSize: '.62rem', color: 'var(--danger)', background: 'rgba(224,75,75,.15)', padding: '0 .25rem', borderRadius: '2px' }}>
-                                                        خ{m.redCards1}
+                                                        {m.redCards1}
                                                     </span>
                                                 )}
                                             </span>
@@ -107,17 +97,6 @@ export default function MatchHistory({ matches }) {
 
                                         {/* Team 2 */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem', flexDirection: 'row-reverse' }}>
-                                            <div style={{
-                                                width: 26, height: 26, borderRadius: '3px', flexShrink: 0,
-                                                background: w2 ? 'var(--gold-dim)' : 'var(--bg-elevated)',
-                                                border: `1px solid ${w2 ? 'var(--gold-border)' : 'var(--border)'}`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '.65rem', fontWeight: 900,
-                                                color: w2 ? 'var(--gold)' : 'var(--text-muted)',
-                                                fontFamily: 'Inter, sans-serif',
-                                            }}>
-                                                {m.team2?.name?.[0] || '?'}
-                                            </div>
                                             <span style={{
                                                 fontSize: '.84rem', fontWeight: w2 ? 900 : 700,
                                                 color: w2 ? 'var(--text-primary)' : 'var(--text-secondary)',
@@ -126,7 +105,7 @@ export default function MatchHistory({ matches }) {
                                             }}>
                                                 {m.redCards2 > 0 && (
                                                     <span style={{ marginLeft: '.3rem', fontSize: '.62rem', color: 'var(--danger)', background: 'rgba(224,75,75,.15)', padding: '0 .25rem', borderRadius: '2px' }}>
-                                                        خ{m.redCards2}
+                                                        {m.redCards2}
                                                     </span>
                                                 )}
                                                 {m.team2?.name}
