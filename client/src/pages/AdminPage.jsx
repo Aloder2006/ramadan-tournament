@@ -9,8 +9,9 @@ import AddTeamForm from '../components/AddTeamForm';
 import MatchesManager from '../components/MatchesManager';
 import KnockoutMatchManager from '../components/KnockoutMatchManager';
 import CanvasExporter from '../components/CanvasExporter';
-import TournamentSettingsEditor from '../components/TournamentSettingsEditor';
+import TournamentSettingsEditor, { applySettingsColors } from '../components/TournamentSettingsEditor';
 import config from '../tournament.config';
+
 
 /* ──────────────────────────────────────────
    TEAMS TABLE
@@ -221,10 +222,11 @@ export default function AdminPage({ onLogout }) {
             const [t, m, s] = await Promise.all([getTeams(), getMatches(), getSettings()]);
             setTeams(Array.isArray(t) ? t : []);
             setMatches(Array.isArray(m) ? m : []);
-            if (s && !s.message) setSettingsState(s);
+            if (s && !s.message) { setSettingsState(s); applySettingsColors(s); }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     };
+
     useEffect(() => { fetchAll(); }, []);
 
     const activateKO = async () => { setPhaseLoading(true); await setPhase('knockout'); setSettingsState(p => ({ ...p, phase: 'knockout' })); setPhaseLoading(false); };

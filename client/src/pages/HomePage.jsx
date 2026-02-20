@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTeams, getTodayMatches, getTomorrowMatches, getMatchHistory, getSettings, getMatches } from '../services/api';
-import TodayMatches from '../components/TodayMatches';
-import TomorrowMatches from '../components/TomorrowMatches';
+import MatchesSection from '../components/MatchesSection';
 import GroupTable from '../components/GroupTable';
 import MatchHistory from '../components/MatchHistory';
 import BracketTree from '../components/BracketTree';
+import { applySettingsColors } from '../components/TournamentSettingsEditor';
 import config from '../tournament.config';
-
 
 export default function HomePage() {
     const [teams, setTeams] = useState([]);
@@ -17,8 +16,7 @@ export default function HomePage() {
     const [settings, setSettings] = useState(null);
     const [knockoutMatches, setKnockoutMatches] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState('groups'); // 'groups' | 'knockout'
-    const navigate = useNavigate();
+    const [view, setView] = useState('groups');
 
     useEffect(() => {
         const load = async () => {
@@ -32,7 +30,7 @@ export default function HomePage() {
                 setHistory(Array.isArray(historyData) ? historyData : []);
                 if (settingsData && !settingsData.message) {
                     setSettings(settingsData);
-                    // Auto-switch to knockout if phase is knockout
+                    applySettingsColors(settingsData);
                     if (settingsData.phase === 'knockout') setView('knockout');
                 }
                 setKnockoutMatches(Array.isArray(koData) ? koData : []);
@@ -47,14 +45,13 @@ export default function HomePage() {
 
     if (loading) return (
         <div className="loading-screen">
-            <div className="splash-logo">{settings?.logoEmoji || config.logoEmoji}</div>
-            <div className="splash-name">{settings?.tournamentName || config.name}</div>
+            <div className="splash-logo">{config.logoEmoji}</div>
+            <div className="splash-name">{config.name}</div>
             <div className="loader" />
-            <p>جاري التحميل...</p>
         </div>
     );
 
-    // Champion detection (penalty-aware)
+    // Champion detection
     const finalMatch = knockoutMatches.find(m => m.knockoutRound === 'النهائي' && m.status === 'Completed');
     const champion = finalMatch
         ? finalMatch.hasPenalties
@@ -62,60 +59,56 @@ export default function HomePage() {
             : (finalMatch.score1 > finalMatch.score2 ? finalMatch.team1 : finalMatch.score2 > finalMatch.score1 ? finalMatch.team2 : null)
         : null;
 
+    const tName = settings?.tournamentName || config.name;
+    const tEmoji = settings?.logoEmoji || config.logoEmoji;
+
     return (
         <div className="page">
-            {/* Simple Fixed Navbar */}
+            {/* Navbar */}
             <header className="simple-navbar">
-                <div style={{ width: 24 }}></div>
+                <div style={{ width: 32 }} />
                 <h1 className="simple-navbar-title">
-                    <span className="navbar-logo">{settings?.logoEmoji || config.logoEmoji}</span>
-                    {settings?.tournamentName || config.name}
+                    <span className="navbar-logo">{tEmoji}</span>
+                    {tName}
                 </h1>
-                <div style={{ width: 24 }}></div>
+                <div style={{ width: 32 }} />
             </header>
-
-            {/* Bottom Admin Button */}
-            <button className="bottom-admin-btn" onClick={() => navigate('/admin')} title="لوحة الإدارة">⚙</button>
-
 
             {/* View Toggle */}
             <div className="view-toggle">
-                <button
-                    className={`view-toggle-btn ${view === 'groups' ? 'active' : ''}`}
-                    onClick={() => setView('groups')}
-                >
-                    📊 دور المجموعات
+                <button className={`view-toggle-btn ${view === 'groups' ? 'active' : ''}`} onClick={() => setView('groups')}>
+                    المجموعات
                 </button>
-                <button
-                    className={`view-toggle-btn ${view === 'knockout' ? 'active' : ''}`}
-                    onClick={() => setView('knockout')}
-                >
-                    🏆 دور الإقصاء
+                <button className={`view-toggle-btn ${view === 'knockout' ? 'active' : ''}`} onClick={() => setView('knockout')}>
+                    الإقصاء
                     {settings?.phase === 'knockout' && <span className="live-dot" />}
                 </button>
             </div>
 
-            {/* ============ GROUPS VIEW ============ */}
+            {/* ── GROUPS VIEW ── */}
             {view === 'groups' && (
                 <>
-                    <TodayMatches matches={todayMatches.filter(m => m.phase !== 'knockout')} />
-                    <TomorrowMatches matches={tomorrowMatches.filter(m => m.phase !== 'knockout')} />
+                    <MatchesSection
+                        todayMatches={todayMatches.filter(m => m.phase !== 'knockout')}
+                        tomorrowMatches={tomorrowMatches.filter(m => m.phase !== 'knockout')}
+                    />
+
                     <section className="groups-section">
-                        <h2 className="section-heading" style={{ marginBottom: '0.85rem' }}>📊 جداول المجموعات</h2>
+                        <h2 className="section-heading">جداول المجموعات</h2>
                         <div className="groups-grid">
                             {config.groups.map(g => (
                                 <GroupTable key={g} group={g} teams={teams.filter(t => t.group === g)} />
                             ))}
                         </div>
                     </section>
+
                     <MatchHistory matches={history.filter(m => m.phase !== 'knockout')} />
                 </>
             )}
 
-            {/* ============ KNOCKOUT VIEW ============ */}
+            {/* ── KNOCKOUT VIEW ── */}
             {view === 'knockout' && (
                 <div className="ko-view">
-                    {/* Champion Banner */}
                     {champion && (
                         <div className="champion-banner">
                             <div className="champion-inner">
@@ -128,19 +121,16 @@ export default function HomePage() {
                         </div>
                     )}
 
-                    {/* Today's and tomorrow's knockout matches */}
-                    <TodayMatches matches={todayMatches.filter(m => m.phase === 'knockout')} title="🏆 مباريات الإقصاء اليوم" />
-                    <TomorrowMatches matches={tomorrowMatches.filter(m => m.phase === 'knockout')} />
+                    <MatchesSection
+                        todayMatches={todayMatches.filter(m => m.phase === 'knockout')}
+                        tomorrowMatches={tomorrowMatches.filter(m => m.phase === 'knockout')}
+                    />
 
-                    {/* Visual Bracket */}
                     <div className="ko-bracket-desktop">
-                        <BracketTree
-                            knockoutMatches={knockoutMatches}
-                            bracketSlots={settings?.bracketSlots || []}
-                        />
+                        <BracketTree knockoutMatches={knockoutMatches} bracketSlots={settings?.bracketSlots || []} />
                     </div>
 
-                    {/* Mobile match list */}
+                    {/* Mobile KO list */}
                     <div className="ko-match-list">
                         {['ربع النهائي', 'نصف النهائي', 'نهائي الترتيب', 'النهائي'].map(round => {
                             const roundMs = knockoutMatches.filter(m => m.knockoutRound === round);
@@ -163,7 +153,7 @@ export default function HomePage() {
                                                 <div className={`ko-team-name ko-team-right ${w2 ? 'ko-winner' : ''}`}>{m.team2?.name}</div>
                                                 {m.matchDate && (
                                                     <div className="ko-match-date">
-                                                        📅 {new Date(m.matchDate).toLocaleDateString('ar-EG', { weekday: 'short', day: '2-digit', month: 'short' })}
+                                                        {new Date(m.matchDate).toLocaleDateString('ar-EG', { weekday: 'short', day: '2-digit', month: 'short' })}
                                                     </div>
                                                 )}
                                             </div>
@@ -172,7 +162,6 @@ export default function HomePage() {
                                 </div>
                             );
                         })}
-
                         {knockoutMatches.length === 0 && !(settings?.bracketSlots?.some(s => s.team)) && (
                             <div className="ko-empty-state">
                                 <div className="ko-empty-icon">🏆</div>

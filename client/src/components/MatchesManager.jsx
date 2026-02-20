@@ -44,7 +44,9 @@ function EditMatchModal({ match, onClose, onSaved }) {
         setSaving(true);
         try {
             const payload = {
-                matchDate: matchDate || null,
+                // convert datetime-local (local time) to ISO — fixes UTC+2 offset bug
+                matchDate: matchDate ? new Date(matchDate).toISOString() : null,
+
                 status,
                 score1: status === 'Completed' ? Number(s1) : undefined,
                 score2: status === 'Completed' ? Number(s2) : undefined,

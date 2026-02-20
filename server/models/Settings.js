@@ -20,12 +20,21 @@ const settingsSchema = new mongoose.Schema({
     tournamentName: { type: String, default: 'دوري رمضان' },
     subtitle: { type: String, default: '1447 هـ - 2026 م' },
     logoEmoji: { type: String, default: '⚽' },
-    // ── Colors ──
+    // ── Brand Colors ──
     primaryColor: { type: String, default: '#e2b04a' },
-    secondaryColor: { type: String, default: '#4caf80' },
+    secondaryColor: { type: String, default: '#3dba72' },
+    // ── Full Site Color Palette ──
+    colorBgBase: { type: String, default: '#0f1117' },
+    colorBgCard: { type: String, default: '#1c2130' },
+    colorBorder: { type: String, default: '#252d3d' },
+    colorTextPrimary: { type: String, default: '#dde2ed' },
+    colorSuccess: { type: String, default: '#3dba72' },
+    colorDanger: { type: String, default: '#e04b4b' },
+    colorIndigo: { type: String, default: '#6c76e8' },
     // ── Fonts ──
     logoFont: { type: String, default: 'Lalezar' },
     bodyFont: { type: String, default: 'Tajawal' },
+
 });
 
 settingsSchema.statics.getSettings = async function () {

@@ -102,12 +102,15 @@ router.put('/tournament-name', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// PUT /api/settings/info — update all tournament identity fields
+// PUT /api/settings/info — update all tournament identity + color + font fields
 router.put('/info', async (req, res) => {
     try {
         const {
             tournamentName, subtitle, logoEmoji,
-            primaryColor, secondaryColor, logoFont, bodyFont,
+            primaryColor, secondaryColor,
+            colorBgBase, colorBgCard, colorBorder,
+            colorTextPrimary, colorSuccess, colorDanger, colorIndigo,
+            logoFont, bodyFont,
         } = req.body;
         const settings = await Settings.getSettings();
         if (tournamentName !== undefined) settings.tournamentName = tournamentName || 'دوري رمضان';
@@ -115,12 +118,20 @@ router.put('/info', async (req, res) => {
         if (logoEmoji !== undefined) settings.logoEmoji = logoEmoji;
         if (primaryColor !== undefined) settings.primaryColor = primaryColor;
         if (secondaryColor !== undefined) settings.secondaryColor = secondaryColor;
+        if (colorBgBase !== undefined) settings.colorBgBase = colorBgBase;
+        if (colorBgCard !== undefined) settings.colorBgCard = colorBgCard;
+        if (colorBorder !== undefined) settings.colorBorder = colorBorder;
+        if (colorTextPrimary !== undefined) settings.colorTextPrimary = colorTextPrimary;
+        if (colorSuccess !== undefined) settings.colorSuccess = colorSuccess;
+        if (colorDanger !== undefined) settings.colorDanger = colorDanger;
+        if (colorIndigo !== undefined) settings.colorIndigo = colorIndigo;
         if (logoFont !== undefined) settings.logoFont = logoFont;
         if (bodyFont !== undefined) settings.bodyFont = bodyFont;
         await settings.save();
         res.json(settings);
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
+
 
 // ════════════════════════════════════════════════════
 // RESET ROUTES

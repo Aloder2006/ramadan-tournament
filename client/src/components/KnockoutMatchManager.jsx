@@ -36,7 +36,8 @@ function KOEditModal({ match, onClose, onSaved }) {
         setSaving(true);
         try {
             const payload = {
-                matchDate: matchDate || null,
+                matchDate: matchDate ? new Date(matchDate).toISOString() : null,
+
                 status,
                 score1: status === 'Completed' ? Number(s1) : undefined,
                 score2: status === 'Completed' ? Number(s2) : undefined,
