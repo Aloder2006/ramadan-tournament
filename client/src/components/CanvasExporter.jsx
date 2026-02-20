@@ -213,7 +213,7 @@ function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
             {/* Teams */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 40, width: '100%', justifyContent: 'center' }}>
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                    {w1 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>فائز</div>}
+                    {w1 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800}}>فائز</div>}
                     <div style={{ fontSize: 44, fontWeight: 900, color: w1 ? primary : cfg.textPrimary }}>{match.team1?.name}</div>
                 </div>
                 <div style={{ padding: '24px 44px', background: cardBg(cfg), borderRadius: 6, border: `1px solid ${done ? primary : cfg.cardBorder}`, textAlign: 'center', minWidth: 200, boxShadow: done ? `0 0 40px ${primary}30` : 'none' }}>
@@ -227,7 +227,7 @@ function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
                     )}
                 </div>
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                    {w2 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>فائز</div>}
+                    {w2 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800}}>فائز</div>}
                     <div style={{ fontSize: 44, fontWeight: 900, color: w2 ? primary : cfg.textPrimary }}>{match.team2?.name}</div>
                 </div>
             </div>

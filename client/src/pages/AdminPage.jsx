@@ -27,41 +27,64 @@ function TeamsTable({ teams, onRefresh }) {
     const saveEdit = async (id) => { await updateTeam(id, { name, group }); setEditId(null); onRefresh(); };
     const del = async (id) => { if (!window.confirm('حذف هذا الفريق؟')) return; await deleteTeam(id); onRefresh(); };
 
+    const thSt = { padding: '.45rem .5rem', fontSize: '.62rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center', borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)', whiteSpace: 'nowrap' };
+    const tdSt = (extra = {}) => ({ padding: '.42rem .5rem', fontSize: '.82rem', color: 'var(--text-secondary)', textAlign: 'center', borderBottom: '1px solid color-mix(in srgb, var(--border) 50%, transparent)', ...extra });
+
     return (
-        <div className="table-wrapper">
-            <table className="matches-table">
+        <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 580 }}>
                 <thead>
-                    <tr><th>#</th><th>الفريق</th><th>مج</th><th>نق</th><th>لع</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>ع</th><th>±</th><th></th></tr>
+                    <tr>
+                        <th style={{ ...thSt, width: 32 }}>#</th>
+                        <th style={{ ...thSt, textAlign: 'right', paddingRight: '.75rem', minWidth: 120 }}>الفريق</th>
+                        <th style={{ ...thSt, width: 38 }}>مج</th>
+                        <th style={{ ...thSt, width: 38 }}>نق</th>
+                        <th style={{ ...thSt, width: 36 }}>لع</th>
+                        <th style={{ ...thSt, width: 36 }}>ف</th>
+                        <th style={{ ...thSt, width: 36 }}>ت</th>
+                        <th style={{ ...thSt, width: 36 }}>خ</th>
+                        <th style={{ ...thSt, width: 36 }}>له</th>
+                        <th style={{ ...thSt, width: 36 }}>عل</th>
+                        <th style={{ ...thSt, width: 42 }}>±</th>
+                        <th style={{ ...thSt, width: 64 }}></th>
+                    </tr>
                 </thead>
                 <tbody>
                     {teams.length === 0 ? (
-                        <tr><td colSpan="12" className="empty-cell">لا يوجد فرق بعد</td></tr>
+                        <tr><td colSpan="12" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>لا يوجد فرق بعد</td></tr>
                     ) : teams.map((t, i) => (
-                        <tr key={t._id}>
-                            <td>{i + 1}</td>
-                            <td>{editId === t._id
-                                ? <input className="form-input inline-input" value={name} onChange={e => setName(e.target.value)} />
-                                : t.name}
+                        <tr key={t._id} style={{ background: editId === t._id ? 'var(--bg-elevated)' : 'var(--bg-card)', transition: 'background .1s' }}>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', fontWeight: 700, fontSize: '.72rem', color: 'var(--text-muted)' })}>{i + 1}</td>
+                            <td style={{ ...tdSt({ textAlign: 'right', paddingRight: '.75rem' }), display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                                <div style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--bg-elevated)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.65rem', fontWeight: 900, color: 'var(--text-muted)', fontFamily: 'Inter,sans-serif', flexShrink: 0 }}>{t.name?.[0]}</div>
+                                {editId === t._id
+                                    ? <input value={name} onChange={e => setName(e.target.value)} style={{ flex: 1, padding: '.3rem .5rem', background: 'var(--bg-input)', border: '1px solid var(--gold-border)', borderRadius: 3, color: 'var(--text-primary)', fontSize: '.82rem', fontFamily: 'inherit' }} />
+                                    : <span style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>}
                             </td>
-                            <td>{editId === t._id
-                                ? <select className="form-select inline-input" value={group} onChange={e => setGroup(e.target.value)}>
-                                    {config.groups.map(g => <option key={g} value={g}>{g}</option>)}
-                                </select>
-                                : <span className="group-chip">{t.group}</span>}
+                            <td style={tdSt()}>
+                                {editId === t._id
+                                    ? <select value={group} onChange={e => setGroup(e.target.value)} style={{ padding: '.3rem .4rem', background: 'var(--bg-input)', border: '1px solid var(--gold-border)', borderRadius: 3, color: 'var(--text-primary)', fontSize: '.78rem', fontFamily: 'inherit' }}>
+                                        {config.groups.map(g => <option key={g} value={g}>{g}</option>)}
+                                    </select>
+                                    : <span style={{ fontSize: '.65rem', fontWeight: 800, color: 'var(--gold)', background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', padding: '.06rem .32rem', borderRadius: 3 }}>{t.group}</span>}
                             </td>
-                            <td className="points-cell">{t.points}</td>
-                            <td>{t.played}</td><td>{t.won}</td><td>{t.drawn}</td><td>{t.lost}</td>
-                            <td>{t.gf}</td><td>{t.ga}</td>
-                            <td className={t.gd > 0 ? 'pos' : t.gd < 0 ? 'neg' : ''}>
-                                {t.gd > 0 ? `+${t.gd}` : t.gd}
-                            </td>
-                            <td>
-                                <div className="actions-cell">
-                                    {editId === t._id
-                                        ? <><button className="btn btn-success btn-xs" onClick={() => saveEdit(t._id)}>💾</button>
-                                            <button className="btn btn-ghost btn-xs" onClick={() => setEditId(null)}>✕</button></>
-                                        : <><button className="btn btn-ghost btn-xs" onClick={() => startEdit(t)}>✏️</button>
-                                            <button className="btn btn-danger btn-xs" onClick={() => del(t._id)}>🗑️</button></>}
+                            <td style={tdSt({ color: 'var(--gold)', fontWeight: 900, fontFamily: 'Inter,sans-serif' })}>{t.points}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.played}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', color: 'var(--success)' })}>{t.won}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.drawn}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', color: 'var(--danger)' })}>{t.lost}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.gf}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.ga}</td>
+                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', fontWeight: 700, color: t.gd > 0 ? 'var(--success)' : t.gd < 0 ? 'var(--danger)' : 'var(--text-muted)' })}>{t.gd > 0 ? `+${t.gd}` : t.gd}</td>
+                            <td style={tdSt()}>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '.3rem' }}>
+                                    {editId === t._id ? <>
+                                        <button onClick={() => saveEdit(t._id)} style={{ width: 26, height: 26, border: '1px solid var(--success)', borderRadius: 3, background: 'rgba(61,186,114,.15)', color: 'var(--success)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
+                                        <button onClick={() => setEditId(null)} style={{ width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 3, background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                                    </> : <>
+                                        <button onClick={() => startEdit(t)} style={{ width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 3, background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✏</button>
+                                        <button onClick={() => del(t._id)} style={{ width: 26, height: 26, border: '1px solid var(--danger)', borderRadius: 3, background: 'rgba(224,75,75,.1)', color: 'var(--danger)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🗑</button>
+                                    </>}
                                 </div>
                             </td>
                         </tr>
@@ -71,6 +94,7 @@ function TeamsTable({ teams, onRefresh }) {
         </div>
     );
 }
+
 
 /* ──────────────────────────────────────────
    QUALIFIED SELECTOR
