@@ -58,18 +58,6 @@ export default function HomePage() {
         <div className="page">
             <button className="admin-hint-btn" onClick={() => navigate('/admin')} title="لوحة الإدارة">⚙</button>
 
-            {/* Header */}
-            <header className="site-header">
-                <div className="site-header-inner">
-                    <div className="site-header-left">
-                        <span className="header-moon">{config.logoEmoji}</span>
-                        <div>
-                            <h1 className="site-title logo-font">{config.name}</h1>
-                            <p className="site-subtitle">{config.subtitle || settings?.tournamentName || ''}</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
 
             {/* View Toggle */}
             <div className="view-toggle">
