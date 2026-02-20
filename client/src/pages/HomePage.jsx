@@ -125,7 +125,7 @@ export default function HomePage() {
                         {/* ONE qualifier legend below ALL groups */}
                         <div style={{ marginTop: '.75rem', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
                             <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--gold)', flexShrink: 0 }} />
-                            <span style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>المتأهلون للإقصاء (أول فريقين من كل مجموعة)</span>
+                            <span style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>المتأهلون للإقصاء</span>
                         </div>
                     </section>
 

@@ -58,7 +58,7 @@ function MatchCard({ m, isTomorrow }) {
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: '3px',
                     background: 'var(--bg-elevated)',
-                    border: `1px solid ${done ? 'var(--border-light)' : 'var(--border)'}`,
+                    border: '1px solid var(--border)',
                     borderRadius: '3px', padding: '.15rem .5rem',
                     minWidth: 60, justifyContent: 'center',
                 }}>
@@ -130,8 +130,9 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                             <span style={{
                                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                 minWidth: 18, height: 18, padding: '0 5px', borderRadius: '2px',
-                                background: t.id === 'today' ? 'var(--gold-dim)' : 'var(--indigo-dim)',
-                                color: t.id === 'today' ? 'var(--gold)' : 'var(--indigo)',
+                                background: 'var(--bg-elevated)',
+                                color: tab === t.id ? 'var(--gold)' : 'var(--text-muted)',
+                                border: '1px solid var(--border)',
                                 fontSize: '.62rem', fontWeight: 800,
                             }}>{t.count}</span>
                         )}

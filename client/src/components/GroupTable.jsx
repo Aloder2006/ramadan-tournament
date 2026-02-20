@@ -4,74 +4,93 @@ export default function GroupTable({ group, teams }) {
     );
 
     return (
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
-            {/* Header */}
+        <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            overflow: 'hidden',
+        }}>
+            {/* ── Header ── */}
             <div style={{
-                padding: '.45rem .75rem',
+                display: 'flex', alignItems: 'center', gap: '.55rem',
+                padding: '.5rem .75rem',
                 background: 'var(--bg-elevated)',
                 borderBottom: '1px solid var(--border)',
             }}>
-                <span style={{ fontSize: '.7rem', fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                <span style={{
+                    fontSize: '.62rem', fontWeight: 900, color: 'var(--gold)',
+                    background: 'var(--gold-dim)', border: '1px solid var(--gold-border)',
+                    borderRadius: 3, padding: '.1rem .4rem', letterSpacing: '.04em',
+                    fontFamily: 'Inter, sans-serif',
+                }}>
+                    {group}
+                </span>
+                <span style={{ fontSize: '.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                     المجموعة {group}
                 </span>
             </div>
 
             {sorted.length === 0 ? (
-                <div style={{ padding: '.75rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.78rem' }}>
+                <div style={{ padding: '.85rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.78rem' }}>
                     لا توجد فرق
                 </div>
             ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: 'var(--bg-elevated)' }}>
-                            <th style={thStyle('right', 34)}>#</th>
-                            <th style={thStyle('right')}>الفريق</th>
-                            <th style={thStyle()}>ل</th>
-                            <th style={thStyle()}>ف</th>
-                            <th style={thStyle()}>ت</th>
-                            <th style={thStyle()}>خ</th>
-                            <th style={thStyle()}>±</th>
-                            <th style={thStyle()}>نق</th>
+                        <tr>
+                            <th style={TH('right', 40)}>الفريق</th>
+                            <th style={TH()}>ل</th>
+                            <th style={TH()}>ف</th>
+                            <th style={TH()}>ت</th>
+                            <th style={TH()}>خ</th>
+                            <th style={TH()}>±</th>
+                            <th style={TH()}>نق</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sorted.map((team, i) => {
-                            const isQ = i < 2;
-                            const isFirst = i === 0;
+                            const qualified = i < 2;
                             return (
                                 <tr key={team._id} style={{
-                                    background: isFirst ? 'rgba(226,176,74,.06)' : isQ ? 'rgba(226,176,74,.02)' : 'transparent',
-                                    borderBottom: '1px solid var(--border)',
+                                    borderBottom: i < sorted.length - 1 ? '1px solid color-mix(in srgb, var(--border) 60%, transparent)' : 'none',
+                                    borderRight: qualified ? `3px solid ${i === 0 ? 'var(--gold)' : 'color-mix(in srgb, var(--gold) 45%, transparent)'}` : '3px solid transparent',
                                 }}>
-                                    <td style={{
-                                        ...tdStyle('center'),
-                                        paddingRight: '.5rem',
-                                    }}>
-                                        {i === 0 ? (
-                                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)', verticalAlign: 'middle' }} />
-                                        ) : i === 1 ? (
-                                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)', opacity: .45, verticalAlign: 'middle' }} />
-                                        ) : (
-                                            <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif' }}>{i + 1}</span>
-                                        )}
+                                    {/* Team name */}
+                                    <td style={{ padding: '.45rem .6rem', textAlign: 'right', verticalAlign: 'middle' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
+                                            <span style={{
+                                                fontSize: '.62rem', fontWeight: 700, color: 'var(--text-muted)',
+                                                fontFamily: 'Inter, sans-serif', minWidth: 14, textAlign: 'center',
+                                            }}>{i + 1}</span>
+                                            <span style={{
+                                                fontSize: '.84rem', fontWeight: qualified ? 700 : 500,
+                                                color: qualified ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100,
+                                            }}>{team.name}</span>
+                                        </div>
                                     </td>
-                                    <td style={{ ...tdStyle('right'), fontWeight: 700, color: 'var(--text-primary)', fontSize: '.84rem', paddingRight: '.5rem' }}>
-                                        {team.name}
-                                    </td>
-                                    <td style={tdStyle()}>{team.played}</td>
-                                    <td style={{ ...tdStyle(), color: 'var(--success)', fontWeight: 700 }}>{team.won}</td>
-                                    <td style={tdStyle()}>{team.drawn}</td>
-                                    <td style={{ ...tdStyle(), color: 'var(--danger)' }}>{team.lost}</td>
+
+                                    {/* Stats — all same muted color, no green/red noise */}
+                                    <td style={TD()}>{team.played}</td>
+                                    <td style={TD()}>{team.won}</td>
+                                    <td style={TD()}>{team.drawn}</td>
+                                    <td style={TD()}>{team.lost}</td>
+
+                                    {/* GD */}
                                     <td style={{
-                                        ...tdStyle(), fontFamily: 'Inter, sans-serif', fontSize: '.75rem',
-                                        color: team.gd > 0 ? 'var(--success)' : team.gd < 0 ? 'var(--danger)' : 'var(--text-muted)',
+                                        ...TD(),
+                                        fontFamily: 'Inter, sans-serif', fontSize: '.75rem',
+                                        color: team.gd > 0 ? 'var(--text-secondary)' : team.gd < 0 ? 'var(--text-muted)' : 'var(--text-muted)',
                                     }}>
                                         {team.gd > 0 ? `+${team.gd}` : team.gd}
                                     </td>
+
+                                    {/* Points — only gold accent */}
                                     <td style={{
-                                        ...tdStyle(),
-                                        fontWeight: 900, color: 'var(--gold)',
-                                        fontFamily: 'Inter, sans-serif', fontSize: '.9rem',
+                                        ...TD(),
+                                        fontWeight: 900, fontSize: '.88rem',
+                                        color: qualified ? 'var(--gold)' : 'var(--text-secondary)',
+                                        fontFamily: 'Inter, sans-serif',
                                     }}>
                                         {team.points}
                                     </td>
@@ -85,8 +104,8 @@ export default function GroupTable({ group, teams }) {
     );
 }
 
-const thStyle = (align = 'center', minW) => ({
-    padding: '.28rem .4rem',
+const TH = (align = 'center', minW) => ({
+    padding: '.32rem .5rem',
     textAlign: align,
     fontSize: '.6rem',
     fontWeight: 700,
@@ -96,12 +115,14 @@ const thStyle = (align = 'center', minW) => ({
     borderBottom: '1px solid var(--border)',
     minWidth: minW,
     whiteSpace: 'nowrap',
+    background: 'var(--bg-elevated)',
 });
 
-const tdStyle = (align = 'center') => ({
-    padding: '.42rem .4rem',
+const TD = (align = 'center') => ({
+    padding: '.42rem .5rem',
     textAlign: align,
-    fontSize: '.8rem',
-    color: 'var(--text-secondary)',
+    fontSize: '.82rem',
+    color: 'var(--text-muted)',
     verticalAlign: 'middle',
+    fontFamily: 'Inter, sans-serif',
 });
