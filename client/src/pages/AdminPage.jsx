@@ -3,7 +3,8 @@ import {
     getTeams, getMatches, getSettings,
     setPhase, setQualifiedTeams, setBracketSlots,
     deleteTeam, updateTeam,
-    resetGroups, resetKnockout, resetAll
+    resetGroups, resetKnockout, resetAll,
+    getRankings, generateKnockout,
 } from '../services/api';
 import AddTeamForm from '../components/AddTeamForm';
 import MatchesManager from '../components/MatchesManager';
@@ -11,6 +12,7 @@ import KnockoutMatchManager from '../components/KnockoutMatchManager';
 import CanvasExporter from '../components/CanvasExporter';
 import TournamentSettingsEditor, { applySettingsColors } from '../components/TournamentSettingsEditor';
 import config from '../tournament.config';
+
 
 
 /* ──────────────────────────────────────────
@@ -206,8 +208,124 @@ function BracketDraw({ teams, settings, onSaved }) {
 }
 
 /* ──────────────────────────────────────────
+   AUTO GENERATE KO
+────────────────────────────────────────── */
+function AutoGenerateKO({ teams, onGenerated }) {
+    const [rankings, setRankings] = useState(null);
+    const [loadingRank, setLoadingRank] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [result, setResult] = useState(null);
+    const [err, setErr] = useState('');
+
+    const loadRankings = async () => {
+        setLoadingRank(true);
+        try {
+            const data = await getRankings();
+            if (data.message) throw new Error(data.message);
+            setRankings(data);
+        } catch (e) { setErr(e.message); }
+        finally { setLoadingRank(false); }
+    };
+
+    const doGenerate = async () => {
+        setGenerating(true); setErr(''); setResult(null);
+        try {
+            const data = await generateKnockout();
+            if (data.message && !data.bracket) throw new Error(data.message);
+            setResult(data);
+            onGenerated?.();
+        } catch (e) { setErr(e.message || 'حدث خطأ'); }
+        finally { setGenerating(false); }
+    };
+
+    const GROUPS = ['أ', 'ب', 'ج', 'د'];
+
+    return (
+        <div className="ko-step-card">
+            <div className="ko-step-header">
+                <span className="ko-step-num">١</span>
+                <div>
+                    <div className="ko-step-title">توليد القرعة التلقائية</div>
+                    <div className="ko-step-desc">فرز المجموعات → نظام المقص → إنشاء ربع النهائي</div>
+                </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="autoko-actions">
+                <button className="btn btn-ghost btn-sm" onClick={loadRankings} disabled={loadingRank}>
+                    {loadingRank ? '⏳' : '📊 عرض الترتيب الحالي'}
+                </button>
+                <button className="btn btn-primary" onClick={doGenerate} disabled={generating}>
+                    {generating ? '⏳ جاري التوليد...' : '🔀 توليد ربع النهائي تلقائياً'}
+                </button>
+            </div>
+
+            {err && <div className="alert-error" style={{ marginTop: '0.75rem' }}>{err}</div>}
+
+            {/* Rankings preview */}
+            {rankings && (
+                <div className="autoko-rankings">
+                    <div className="autoko-rank-title">ترتيب المجموعات (نقاط → فارق أهداف → مواجهات مباشرة)</div>
+                    <div className="autoko-rank-grid">
+                        {GROUPS.map(g => {
+                            const gTeams = rankings[g] || [];
+                            return (
+                                <div key={g} className="autoko-group">
+                                    <div className="autoko-group-title">المجموعة {g}</div>
+                                    {gTeams.map((t, i) => (
+                                        <div key={t._id} className={`autoko-team-row ${i < 2 ? 'autoko-qualified' : ''}`}>
+                                            <span className="autoko-rank">{i + 1}</span>
+                                            <span className="autoko-tname">{t.name}</span>
+                                            <span className="autoko-pts">{t.points} ن</span>
+                                            <span className="autoko-gd">{t.gd >= 0 ? '+' : ''}{t.gd}</span>
+                                            {i < 2 && <span className="autoko-qual-badge">متأهل</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Generated bracket result */}
+            {result?.bracket && (
+                <div className="autoko-result">
+                    <div className="autoko-result-title">✅ {result.message}</div>
+                    <div className="autoko-seeding-legend">نظام المقص — لا يلتقي فريقا مجموعة في مرحلة ما قبل النهائي</div>
+                    <table className="autoko-table">
+                        <thead>
+                            <tr>
+                                <th>المباراة</th><th>الطرف الأول</th><th></th><th>الطرف الثاني</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {result.bracket.map(r => (
+                                <tr key={r.position}>
+                                    <td className="autoko-pos">ربع {r.position}</td>
+                                    <td className="autoko-t1">
+                                        {r.team1.name}
+                                        <span className="autoko-gtag">م·{r.team1.group}</span>
+                                    </td>
+                                    <td className="autoko-sep">ضد</td>
+                                    <td className="autoko-t2">
+                                        {r.team2.name}
+                                        <span className="autoko-gtag">م·{r.team2.group}</span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ──────────────────────────────────────────
    MAIN ADMIN PAGE
 ────────────────────────────────────────── */
+
 export default function AdminPage({ onLogout }) {
     const [teams, setTeams] = useState([]);
     const [matches, setMatches] = useState([]);
@@ -318,12 +436,12 @@ export default function AdminPage({ onLogout }) {
                     <div className="ko-phase-row">
                         {settings?.phase === 'knockout' ? (
                             <div className="ko-phase-banner active-phase">
-                                <span>🟢 الإقصاء مفعّل — الصفحة الرئيسية تعرضه تلقائياً</span>
+                                <span>🟢 الإقصاء مفعّل</span>
                                 <button className="btn btn-ghost btn-sm" onClick={deactivateKO} disabled={phaseLoading}>↩ رجوع للمجموعات</button>
                             </div>
                         ) : (
                             <div className="ko-phase-banner">
-                                <span>⚠️ البطولة في دور المجموعات — فعّل الإقصاء عند اكتمال المجموعات</span>
+                                <span>⚠️ دور المجموعات — فعّل الإقصاء عند الاكتمال</span>
                                 <button className="btn btn-primary btn-sm" onClick={activateKO} disabled={phaseLoading}>
                                     {phaseLoading ? '⏳' : '🏆 تفعيل الإقصاء'}
                                 </button>
@@ -331,35 +449,13 @@ export default function AdminPage({ onLogout }) {
                         )}
                     </div>
 
-                    {/* Step 1 — Qualified */}
-                    <div className="ko-step-card">
-                        <div className="ko-step-header">
-                            <span className="ko-step-num">١</span>
-                            <div>
-                                <div className="ko-step-title">الفرق المتأهلة</div>
-                                <div className="ko-step-desc">اختر من تأهل من كل مجموعة</div>
-                            </div>
-                            <span className="ko-step-count">{(settings?.qualifiedTeams || []).length} / {config.knockoutSize}</span>
-                        </div>
-                        <QualifiedSelector teams={teams} settings={settings} onSaved={fetchAll} />
-                    </div>
+                    {/* Auto Generate Card */}
+                    <AutoGenerateKO teams={teams} onGenerated={fetchAll} />
 
-                    {/* Step 2 — Bracket draw */}
+                    {/* Step 2 — Match management */}
                     <div className="ko-step-card">
                         <div className="ko-step-header">
                             <span className="ko-step-num">٢</span>
-                            <div>
-                                <div className="ko-step-title">قرعة ربع النهائي</div>
-                                <div className="ko-step-desc">تعيين الفرق في المربعات — يُنشئ المباريات تلقائياً</div>
-                            </div>
-                        </div>
-                        {settings && <BracketDraw teams={teams} settings={settings} onSaved={fetchAll} />}
-                    </div>
-
-                    {/* Step 3 — Match management */}
-                    <div className="ko-step-card">
-                        <div className="ko-step-header">
-                            <span className="ko-step-num">٣</span>
                             <div>
                                 <div className="ko-step-title">إدارة المباريات</div>
                                 <div className="ko-step-desc">تواريخ، نتائج، ضربات جزاء، حذف</div>
@@ -375,6 +471,7 @@ export default function AdminPage({ onLogout }) {
                     </div>
                 </div>
             )}
+
 
             {/* ══ EXPORT TAB ══ */}
             {tab === 'export' && (

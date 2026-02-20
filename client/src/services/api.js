@@ -53,3 +53,9 @@ export const updateSettings = (data) =>
 export const resetGroups = () => fetch('/api/settings/reset/groups', { method: 'DELETE' }).then(r => r.json());
 export const resetKnockout = () => fetch('/api/settings/reset/knockout', { method: 'DELETE' }).then(r => r.json());
 export const resetAll = () => fetch('/api/settings/reset/all', { method: 'DELETE' }).then(r => r.json());
+
+// --- Knockout auto-generation ---
+export const getRankings = () => fetch('/api/settings/rankings').then(r => r.json());
+export const generateKnockout = () =>
+    fetch('/api/settings/generate-knockout', { method: 'POST' }).then(r => r.json());
+
