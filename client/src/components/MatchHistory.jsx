@@ -37,9 +37,7 @@ const sorted = [...matches].sort((a, b) => {
                             fontSize: '.68rem', fontWeight: 700, color: 'var(--text-muted)',
                             marginBottom: '.4rem', display: 'flex', alignItems: 'center', gap: '.5rem',
                         }}>
-                            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                             {date}
-                            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
