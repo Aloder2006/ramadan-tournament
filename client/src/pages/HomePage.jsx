@@ -173,7 +173,6 @@ export default function HomePage() {
                     ) : (
                         <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                             <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '.5rem' }}>لم يتم إعداد قرعة الإقصاء بعد</div>
-                            <div style={{ fontSize: '.8rem' }}>انتقل إلى /admin لتوليد القرعة</div>
                         </div>
                     )}
 
