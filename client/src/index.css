@@ -3576,3 +3576,50 @@ body {
     font-size: 0.74rem;
   }
 }
+
+/* ===========================
+   SIMPLE NAVBAR
+   =========================== */
+.simple-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.simple-navbar-title {
+  font-family: 'Lalezar', system-ui;
+  font-size: 1.4rem;
+  color: var(--gold);
+  margin: 0;
+  line-height: 1;
+}
+
+.navbar-admin-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--t);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-admin-btn:hover {
+  color: var(--gold);
+  border-color: var(--gold-border);
+  background: var(--bg-base);
+}

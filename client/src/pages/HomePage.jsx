@@ -56,7 +56,12 @@ export default function HomePage() {
 
     return (
         <div className="page">
-            <button className="admin-hint-btn" onClick={() => navigate('/admin')} title="لوحة الإدارة">⚙</button>
+            {/* Simple Fixed Navbar */}
+            <header className="simple-navbar">
+                <button className="navbar-admin-btn" onClick={() => navigate('/admin')} title="لوحة الإدارة">⚙</button>
+                <h1 className="simple-navbar-title">{config.name}</h1>
+                <div style={{ width: 24 }}></div> {/* Spacer for centering */}
+            </header>
 
 
             {/* View Toggle */}
