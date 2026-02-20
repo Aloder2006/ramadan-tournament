@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getTeams, getTodayMatches, getTomorrowMatches, getMatchHistory, getSettings, getMatches } from '../services/api';
 import MatchesSection from '../components/MatchesSection';
 import GroupTable from '../components/GroupTable';
@@ -19,38 +18,34 @@ export default function HomePage() {
     const [view, setView] = useState('groups');
 
     useEffect(() => {
-        const load = async () => {
+        (async () => {
             try {
-                const [teamsData, todayData, tomorrowData, historyData, settingsData, koData] = await Promise.all([
-                    getTeams(), getTodayMatches(), getTomorrowMatches(), getMatchHistory(), getSettings(), getMatches('knockout'),
+                const [tms, today, tmrw, hist, sett, ko] = await Promise.all([
+                    getTeams(), getTodayMatches(), getTomorrowMatches(),
+                    getMatchHistory(), getSettings(), getMatches('knockout'),
                 ]);
-                setTeams(Array.isArray(teamsData) ? teamsData : []);
-                setTodayMatches(Array.isArray(todayData) ? todayData : []);
-                setTomorrowMatches(Array.isArray(tomorrowData) ? tomorrowData : []);
-                setHistory(Array.isArray(historyData) ? historyData : []);
-                if (settingsData && !settingsData.message) {
-                    setSettings(settingsData);
-                    applySettingsColors(settingsData);
-                    if (settingsData.phase === 'knockout') setView('knockout');
+                setTeams(Array.isArray(tms) ? tms : []);
+                setTodayMatches(Array.isArray(today) ? today : []);
+                setTomorrowMatches(Array.isArray(tmrw) ? tmrw : []);
+                setHistory(Array.isArray(hist) ? hist : []);
+                if (sett && !sett.message) {
+                    setSettings(sett);
+                    applySettingsColors(sett);
+                    if (sett.phase === 'knockout') setView('knockout');
                 }
-                setKnockoutMatches(Array.isArray(koData) ? koData : []);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
+                setKnockoutMatches(Array.isArray(ko) ? ko : []);
+            } catch (e) { console.error(e); }
+            finally { setLoading(false); }
+        })();
     }, []);
 
     if (loading) return (
-        <div className="loading-screen">
-            <div className="splash-name">{config.name}</div>
-            <div className="loader" />
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', background: 'var(--bg-base)' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--gold)', fontFamily: 'Cairo, sans-serif' }}>{config.name}</div>
+            <div style={{ width: 24, height: 24, border: '2px solid var(--border)', borderTopColor: 'var(--gold)', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
         </div>
     );
 
-    // Champion detection
     const finalMatch = knockoutMatches.find(m => m.knockoutRound === 'النهائي' && m.status === 'Completed');
     const champion = finalMatch
         ? finalMatch.hasPenalties
@@ -59,30 +54,54 @@ export default function HomePage() {
         : null;
 
     const tName = settings?.tournamentName || config.name;
-    const tEmoji = settings?.logoEmoji || config.logoEmoji;
+    const tEmoji = settings?.logoEmoji || config.logoEmoji || '';
+    const isKO = settings?.phase === 'knockout';
 
     return (
-        <div className="page">
-            {/* Navbar */}
-            <header className="simple-navbar">
-                <div style={{ width: 32 }} />
-                <h1 className="simple-navbar-title">
-                    <span className="navbar-logo">{tEmoji}</span>
-                    {tName}
-                </h1>
-                <div style={{ width: 32 }} />
-            </header>
+        <div style={{ minHeight: '100vh', background: 'var(--bg-base)', fontFamily: 'Tajawal, sans-serif', direction: 'rtl' }}>
 
-            {/* View Toggle */}
-            <div className="view-toggle">
-                <button className={`view-toggle-btn ${view === 'groups' ? 'active' : ''}`} onClick={() => setView('groups')}>
-                    المجموعات
-                </button>
-                <button className={`view-toggle-btn ${view === 'knockout' ? 'active' : ''}`} onClick={() => setView('knockout')}>
-                    الإقصاء
-                    {settings?.phase === 'knockout' && <span className="live-dot" />}
-                </button>
-            </div>
+            {/* ── NAVBAR ── */}
+            <header style={{
+                position: 'sticky', top: 0, zIndex: 200,
+                background: 'var(--bg-card)',
+                borderBottom: '1px solid var(--border)',
+            }}>
+                {/* Top bar: name + admin btn */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.6rem 1rem', maxWidth: 940, margin: '0 auto' }}>
+                    <div style={{ width: 32 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                        {tEmoji && <span style={{ fontSize: '1.1rem' }}>{tEmoji}</span>}
+                        <h1 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--gold)', margin: 0, fontFamily: 'Cairo, sans-serif' }}>{tName}</h1>
+                    </div>
+                    <a href="/admin" style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--text-muted)', padding: '.25rem .55rem', border: '1px solid var(--border)', borderRadius: '2px', background: 'var(--bg-elevated)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        إدارة
+                    </a>
+                </div>
+
+                {/* View tabs */}
+                <div style={{ display: 'flex', borderTop: '1px solid var(--border)', maxWidth: '100%' }}>
+                    {[
+                        { id: 'groups', label: 'المجموعات' },
+                        { id: 'knockout', label: 'الإقصاء', live: isKO },
+                    ].map(t => (
+                        <button key={t.id}
+                            onClick={() => setView(t.id)}
+                            style={{
+                                flex: 1, padding: '.6rem 1rem',
+                                border: 'none', borderBottom: `2px solid ${view === t.id ? 'var(--gold)' : 'transparent'}`,
+                                background: view === t.id ? 'var(--bg-elevated)' : 'transparent',
+                                color: view === t.id ? 'var(--gold)' : 'var(--text-muted)',
+                                fontFamily: 'Tajawal, sans-serif', fontSize: '.88rem', fontWeight: 700,
+                                cursor: 'pointer', transition: 'all .12s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
+                            }}
+                        >
+                            {t.label}
+                            {t.live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />}
+                        </button>
+                    ))}
+                </div>
+            </header>
 
             {/* ── GROUPS VIEW ── */}
             {view === 'groups' && (
@@ -92,28 +111,43 @@ export default function HomePage() {
                         tomorrowMatches={tomorrowMatches.filter(m => m.phase !== 'knockout')}
                     />
 
-                    <section className="groups-section">
-                        <h2 className="section-heading">جداول المجموعات</h2>
-                        <div className="groups-grid">
+                    <section style={{ padding: '1rem 1.25rem', maxWidth: 940, margin: '0 auto' }}>
+                        <div style={{
+                            fontSize: '.7rem', fontWeight: 800, color: 'var(--text-muted)',
+                            textTransform: 'uppercase', letterSpacing: '.08em',
+                            marginBottom: '.75rem', paddingBottom: '.4rem',
+                            borderBottom: '1px solid var(--border)',
+                        }}>جداول المجموعات</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '.85rem' }}>
                             {config.groups.map(g => (
                                 <GroupTable key={g} group={g} teams={teams.filter(t => t.group === g)} />
                             ))}
                         </div>
                     </section>
 
-                    <MatchHistory matches={history.filter(m => m.phase !== 'knockout')} />
+                    <div style={{ maxWidth: 940, margin: '0 auto' }}>
+                        <MatchHistory matches={history.filter(m => m.phase !== 'knockout')} />
+                    </div>
                 </>
             )}
 
             {/* ── KNOCKOUT VIEW ── */}
             {view === 'knockout' && (
-                <div className="ko-view">
+                <div>
+                    {/* Champion banner */}
                     {champion && (
-                        <div className="champion-banner">
-                            <div className="champion-inner">
+                        <div style={{
+                            padding: '.85rem 1.25rem',
+                            background: 'linear-gradient(90deg, var(--gold-dim), transparent)',
+                            borderBottom: '1px solid var(--gold-border)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', maxWidth: 940, margin: '0 auto' }}>
+                                <div style={{ width: 36, height: 36, borderRadius: '4px', background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--gold)', fontSize: '.85rem', fontFamily: 'Inter, sans-serif' }}>
+                                    {champion.name?.[0]}
+                                </div>
                                 <div>
-                                    <div className="champion-label">بطل البطولة</div>
-                                    <div className="champion-name">{champion.name}</div>
+                                    <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em' }}>بطل البطولة</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--gold)', fontFamily: 'Cairo, sans-serif' }}>{champion.name}</div>
                                 </div>
                             </div>
                         </div>
@@ -124,50 +158,28 @@ export default function HomePage() {
                         tomorrowMatches={tomorrowMatches.filter(m => m.phase === 'knockout')}
                     />
 
-                    <div className="ko-bracket-desktop">
-                        <BracketTree knockoutMatches={knockoutMatches} bracketSlots={settings?.bracketSlots || []} />
-                    </div>
+                    {/* Bracket tree — always shown on desktop */}
+                    {(knockoutMatches.length > 0 || settings?.bracketSlots?.some(s => s.team)) ? (
+                        <div style={{ maxWidth: 940, margin: '0 auto', overflow: 'hidden' }}>
+                            <BracketTree
+                                knockoutMatches={knockoutMatches}
+                                bracketSlots={settings?.bracketSlots || []}
+                            />
+                        </div>
+                    ) : (
+                        <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '.5rem' }}>لم يتم إعداد قرعة الإقصاء بعد</div>
+                            <div style={{ fontSize: '.8rem' }}>انتقل إلى لوحة الإدارة لتوليد القرعة</div>
+                        </div>
+                    )}
 
-                    {/* Mobile KO list */}
-                    <div className="ko-match-list">
-                        {['ربع النهائي', 'نصف النهائي', 'نهائي الترتيب', 'النهائي'].map(round => {
-                            const roundMs = knockoutMatches.filter(m => m.knockoutRound === round);
-                            if (!roundMs.length) return null;
-                            return (
-                                <div key={round} className="ko-round-group">
-                                    <div className="ko-round-title">{round}</div>
-                                    {roundMs.map(m => {
-                                        const done = m.status === 'Completed';
-                                        const w1 = done && m.score1 > m.score2;
-                                        const w2 = done && m.score2 > m.score1;
-                                        return (
-                                            <div key={m._id} className={`ko-match-row ${done ? 'ko-done' : ''}`}>
-                                                <div className={`ko-team-name ${w1 ? 'ko-winner' : ''}`}>{m.team1?.name}</div>
-                                                <div className="ko-vs">
-                                                    {done
-                                                        ? <span className="ko-scoreline">{m.score1} - {m.score2}</span>
-                                                        : <span className="ko-vs-text">VS</span>}
-                                                </div>
-                                                <div className={`ko-team-name ko-team-right ${w2 ? 'ko-winner' : ''}`}>{m.team2?.name}</div>
-                                                {m.matchDate && (
-                                                    <div className="ko-match-date">
-                                                        {new Date(m.matchDate).toLocaleDateString('ar-EG', { weekday: 'short', day: '2-digit', month: 'short' })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
-                        {knockoutMatches.length === 0 && !(settings?.bracketSlots?.some(s => s.team)) && (
-                            <div className="ko-empty-state">
-                                <p>لم يتم إعداد قرعة الإقصاء بعد</p>
-                            </div>
-                        )}
+                    {/* KO match history */}
+                    <div style={{ maxWidth: 940, margin: '0 auto' }}>
+                        <MatchHistory matches={history.filter(m => m.phase === 'knockout')} />
                     </div>
                 </div>
             )}
+
         </div>
     );
 }
