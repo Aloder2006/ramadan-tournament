@@ -2584,3 +2584,170 @@ img {
 .final-match {
   border-color: var(--gold-border);
 }
+
+/* =============================================
+   MOBILE RESPONSIVE
+   ============================================= */
+
+/* ── Admin header stacks on small screens ── */
+@media (max-width: 640px) {
+  .admin-header-inner {
+    flex-direction: column;
+    gap: .5rem;
+    align-items: flex-start;
+  }
+
+  /* Admin tabs: horizontal scroll, no wrap */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: .55rem .85rem;
+    font-size: .82rem;
+  }
+
+  /* Settings section: full width, remove side padding */
+  .settings-section,
+  .card {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  /* Reset rows stack vertically */
+  .reset-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: .75rem !important;
+  }
+
+  .reset-row button {
+    align-self: flex-start;
+  }
+
+  /* Teams table: smaller text */
+  .matches-table {
+    font-size: .72rem;
+  }
+
+  .matches-table th,
+  .matches-table td {
+    padding: .3rem .25rem;
+  }
+
+  /* KO phase banner: stack */
+  .ko-phase-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+  }
+
+  /* KO step cards */
+  .ko-step-header {
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  /* AutoKO rank grid: single col */
+  .autoko-rank-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* BracketTree: scroll container */
+  .bt-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* BracketTree round tabs: horizontal scroll */
+  .bt-round-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .bt-round-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bt-round-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Match card grid: single col */
+  .ms-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Qualified selector: single col */
+  .qualified-selector-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* QF draw: single col */
+  .qf-draw-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Export panel: single col */
+  .export-settings-panel {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* ── Tablet tweaks ── */
+@media (max-width: 768px) {
+
+  /* Page padding reduction */
+  .page {
+    padding: 0;
+  }
+
+  /* Groups section heading */
+  section {
+    padding-left: .85rem;
+    padding-right: .85rem;
+  }
+
+  /* BracketTree — ensure scrollable on tablet */
+  .bt-bracket,
+  .bt-bracket-bottom {
+    min-width: 560px;
+  }
+}
+
+/* ── Spin animation for loading ── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .5;
+    transform: scale(.85);
+  }
+}

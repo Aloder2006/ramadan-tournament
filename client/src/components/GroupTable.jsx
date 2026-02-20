@@ -7,7 +7,6 @@ export default function GroupTable({ group, teams }) {
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
             {/* Header */}
             <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '.45rem .75rem',
                 background: 'var(--bg-elevated)',
                 borderBottom: '1px solid var(--border)',
@@ -15,15 +14,6 @@ export default function GroupTable({ group, teams }) {
                 <span style={{ fontSize: '.7rem', fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
                     المجموعة {group}
                 </span>
-                <div style={{ display: 'flex', gap: '.2rem' }}>
-                    {sorted.slice(0, 2).map(t => (
-                        <span key={t._id} style={{
-                            fontSize: '.58rem', fontWeight: 800, color: 'var(--gold)',
-                            background: 'var(--gold-dim)', padding: '.05rem .3rem',
-                            borderRadius: '2px', border: '1px solid var(--gold-border)',
-                        }}>{t.name?.[0]}</span>
-                    ))}
-                </div>
             </div>
 
             {sorted.length === 0 ? (
@@ -55,15 +45,15 @@ export default function GroupTable({ group, teams }) {
                                 }}>
                                     <td style={{
                                         ...tdStyle('center'),
-                                        fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: '.7rem',
-                                        color: isQ ? 'var(--gold)' : 'var(--text-muted)',
                                         paddingRight: '.5rem',
                                     }}>
                                         {i === 0 ? (
-                                            <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--gold)', margin: '0 auto' }} />
+                                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)', verticalAlign: 'middle' }} />
                                         ) : i === 1 ? (
-                                            <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--gold)', opacity: .5, margin: '0 auto' }} />
-                                        ) : i + 1}
+                                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)', opacity: .45, verticalAlign: 'middle' }} />
+                                        ) : (
+                                            <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif' }}>{i + 1}</span>
+                                        )}
                                     </td>
                                     <td style={{ ...tdStyle('right'), fontWeight: 700, color: 'var(--text-primary)', fontSize: '.84rem', paddingRight: '.5rem' }}>
                                         {team.name}
@@ -91,17 +81,6 @@ export default function GroupTable({ group, teams }) {
                     </tbody>
                 </table>
             )}
-
-            {/* Legend: top 2 qualify */}
-            <div style={{
-                padding: '.3rem .6rem',
-                borderTop: '1px solid var(--border)',
-                background: 'var(--bg-elevated)',
-                display: 'flex', alignItems: 'center', gap: '.4rem',
-            }}>
-                <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)' }} />
-                <span style={{ fontSize: '.6rem', color: 'var(--text-muted)' }}>المتأهلون للإقصاء</span>
-            </div>
         </div>
     );
 }

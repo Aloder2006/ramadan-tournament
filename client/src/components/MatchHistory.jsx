@@ -1,15 +1,18 @@
 export default function MatchHistory({ matches }) {
     if (!matches || matches.length === 0) return null;
 
-    const fmtDate = (d) => d
-        ? new Date(d).toLocaleDateString('ar-EG', { day: '2-digit', month: 'short' })
-        : null;
+    // Sort by matchDate ascending, fallback to updatedAt
+    const sorted = [...matches].sort((a, b) => {
+        const da = new Date(a.matchDate || a.updatedAt || 0);
+        const db = new Date(b.matchDate || b.updatedAt || 0);
+        return da - db;
+    });
 
-    // Group by date
-    const grouped = matches.reduce((acc, m) => {
+    // Group by formatted date label
+    const grouped = sorted.reduce((acc, m) => {
         const key = m.matchDate
             ? new Date(m.matchDate).toLocaleDateString('ar-EG', { weekday: 'long', day: '2-digit', month: 'long' })
-            : 'بدون تاريخ';
+            : (m.updatedAt ? new Date(m.updatedAt).toLocaleDateString('ar-EG', { weekday: 'long', day: '2-digit', month: 'long' }) : 'بدون تاريخ');
         if (!acc[key]) acc[key] = [];
         acc[key].push(m);
         return acc;
@@ -17,7 +20,6 @@ export default function MatchHistory({ matches }) {
 
     return (
         <section style={{ padding: '1rem 1.25rem 2rem' }}>
-            {/* Section heading */}
             <div style={{
                 fontSize: '.7rem', fontWeight: 800, color: 'var(--text-muted)',
                 textTransform: 'uppercase', letterSpacing: '.08em',
@@ -30,7 +32,6 @@ export default function MatchHistory({ matches }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                 {Object.entries(grouped).map(([date, dayMatches]) => (
                     <div key={date}>
-                        {/* Date label */}
                         <div style={{
                             fontSize: '.68rem', fontWeight: 700, color: 'var(--text-muted)',
                             marginBottom: '.4rem', display: 'flex', alignItems: 'center', gap: '.5rem',
@@ -40,7 +41,6 @@ export default function MatchHistory({ matches }) {
                             <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                         </div>
 
-                        {/* Match rows */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
                             {dayMatches.map(m => {
                                 const w1 = m.hasPenalties ? m.penaltyScore1 > m.penaltyScore2 : m.score1 > m.score2;
@@ -75,7 +75,7 @@ export default function MatchHistory({ matches }) {
                                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                                             }}>{m.team1?.name}
                                                 {m.redCards1 > 0 && (
-                                                    <span style={{ marginRight: '.3rem', fontSize: '.62rem', color: 'var(--danger)', background: 'var(--danger-dim)', padding: '0 .25rem', borderRadius: '2px' }}>
+                                                    <span style={{ marginRight: '.3rem', fontSize: '.62rem', color: 'var(--danger)', background: 'rgba(224,75,75,.15)', padding: '0 .25rem', borderRadius: '2px' }}>
                                                         خ{m.redCards1}
                                                     </span>
                                                 )}
@@ -125,7 +125,7 @@ export default function MatchHistory({ matches }) {
                                                 textAlign: 'left',
                                             }}>
                                                 {m.redCards2 > 0 && (
-                                                    <span style={{ marginLeft: '.3rem', fontSize: '.62rem', color: 'var(--danger)', background: 'var(--danger-dim)', padding: '0 .25rem', borderRadius: '2px' }}>
+                                                    <span style={{ marginLeft: '.3rem', fontSize: '.62rem', color: 'var(--danger)', background: 'rgba(224,75,75,.15)', padding: '0 .25rem', borderRadius: '2px' }}>
                                                         خ{m.redCards2}
                                                     </span>
                                                 )}
