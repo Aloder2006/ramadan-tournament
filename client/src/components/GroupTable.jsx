@@ -17,6 +17,9 @@ export default function GroupTable({ group, teams }) {
                 background: 'var(--bg-elevated)',
                 borderBottom: '1px solid var(--border)',
             }}>
+                  <span style={{ fontSize: '.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    المجموعة
+                </span>
                 <span style={{
                     fontSize: '.62rem', fontWeight: 900, color: 'var(--gold)',
                     background: 'var(--gold-dim)', border: '1px solid var(--gold-border)',
@@ -25,9 +28,7 @@ export default function GroupTable({ group, teams }) {
                 }}>
                     {group}
                 </span>
-                <span style={{ fontSize: '.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    المجموعة {group}
-                </span>
+        
             </div>
 
             {sorted.length === 0 ? (
