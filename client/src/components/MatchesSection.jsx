@@ -181,6 +181,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                     width: '200%',
                     transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     transform: `translateX(${tab === 'today' ? '0%' : '50%'})`,
+                    borderBottom: '1px solid var(--border)',
                 }}>
                     {/* TODAY PANEL */}
                     <div style={{ width: '50%', flexShrink: 0 }}>
