@@ -15,7 +15,6 @@ export default function HomePage() {
     const [settings, setSettings] = useState(null);
     const [knockoutMatches, setKnockoutMatches] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState('groups');
 
     useEffect(() => {
         (async () => {
@@ -66,122 +65,98 @@ export default function HomePage() {
                 background: 'var(--bg-card)',
                 borderBottom: '1px solid var(--border)',
             }}>
-                {/* Top bar: name only (no admin button — access /admin via URL) */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '.6rem 1rem' }}>
+                {/* Top bar: name only */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '.85rem 1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
                         {tEmoji && <span style={{ fontSize: '1.1rem' }}>{tEmoji}</span>}
                         <h1 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--gold)', margin: 0, fontFamily: 'Cairo, sans-serif' }}>{tName}</h1>
                     </div>
                 </div>
-
-                {/* View tabs */}
-                <div style={{ display: 'flex', borderTop: '1px solid var(--border)' }}>
-                    {[
-                        { id: 'groups', label: 'المجموعات' },
-                        { id: 'knockout', label: 'الإقصاء', live: isKO },
-                    ].map(t => (
-                        <button key={t.id}
-                            onClick={() => setView(t.id)}
-                            style={{
-                                flex: 1, padding: '.6rem 1rem',
-                                border: 'none', borderBottom: `2px solid ${view === t.id ? 'var(--gold)' : 'transparent'}`,
-                                background: view === t.id ? 'var(--bg-elevated)' : 'transparent',
-                                color: view === t.id ? 'var(--gold)' : 'var(--text-muted)',
-                                fontFamily: 'Tajawal, sans-serif', fontSize: '.88rem', fontWeight: 700,
-                                cursor: 'pointer', transition: 'all .12s',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
-                            }}
-                        >
-                            {t.label}
-                            {t.live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />}
-                        </button>
-                    ))}
-                </div>
             </header>
 
-            {/* ── GROUPS VIEW ── */}
-            {view === 'groups' && (
-                <>
-                    <MatchesSection
-                        todayMatches={todayMatches.filter(m => m.phase !== 'knockout')}
-                        tomorrowMatches={tomorrowMatches.filter(m => m.phase !== 'knockout')}
-                    />
+            {/* ── MAIN CONTENT ── */}
+            <main>
+                <MatchesSection
+                    todayMatches={todayMatches.filter(m => isKO ? m.phase === 'knockout' : m.phase !== 'knockout')}
+                    tomorrowMatches={tomorrowMatches.filter(m => isKO ? m.phase === 'knockout' : m.phase !== 'knockout')}
+                />
 
-                    <section style={{ padding: '1rem 1.25rem', maxWidth: 940, margin: '0 auto' }}>
-                        <div style={{
-                            fontSize: '.7rem', fontWeight: 800, color: 'var(--text-muted)',
-                            textTransform: 'uppercase', letterSpacing: '.08em',
-                            marginBottom: '.75rem', paddingBottom: '.4rem',
-                            borderBottom: '1px solid var(--border)',
-                        }}>جداول المجموعات</div>
+                {/* GROUPS VIEW (Only shown if phase is not knockout) */}
+                {!isKO && (
+                    <>
+                        <section style={{ padding: '1rem 1.25rem', maxWidth: 940, margin: '0 auto' }}>
+                            <div style={{
+                                fontSize: '.7rem', fontWeight: 800, color: 'var(--text-muted)',
+                                textTransform: 'uppercase', letterSpacing: '.08em',
+                                marginBottom: '.75rem', paddingBottom: '.4rem',
+                                borderBottom: '1px solid var(--border)',
+                            }}>جداول المجموعات</div>
 
-                        {/* Responsive grid — 1 col on mobile, 2 cols on tablet+ */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: '.85rem' }}>
-                            {config.groups.map(g => (
-                                <GroupTable key={g} group={g} teams={teams.filter(t => t.group === g)} />
-                            ))}
+                            {/* Responsive grid — 2 cols on desktop/tablet, 1 col on small mobile */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
+                                gap: '1.25rem'
+                            }}>
+                                {config.groups.map(g => (
+                                    <GroupTable key={g} group={g} teams={teams.filter(t => t.group === g)} />
+                                ))}
+                            </div>
+
+                            <div style={{ marginTop: '.75rem', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+                                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--gold)', flexShrink: 0 }} />
+                                <span style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>المتأهلون للإقصاء</span>
+                            </div>
+                        </section>
+
+                        <div style={{ maxWidth: 940, margin: '0 auto' }}>
+                            <MatchHistory matches={history.filter(m => m.phase !== 'knockout')} />
                         </div>
+                    </>
+                )}
 
-                        {/* ONE qualifier legend below ALL groups */}
-                        <div style={{ marginTop: '.75rem', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
-                            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--gold)', flexShrink: 0 }} />
-                            <span style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>المتأهلون للإقصاء</span>
-                        </div>
-                    </section>
-
-                    <div style={{ maxWidth: 940, margin: '0 auto' }}>
-                        <MatchHistory matches={history.filter(m => m.phase !== 'knockout')} />
-                    </div>
-                </>
-            )}
-
-            {/* ── KNOCKOUT VIEW ── */}
-            {view === 'knockout' && (
-                <div>
-                    {/* Champion banner */}
-                    {champion && (
-                        <div style={{
-                            padding: '.85rem 1.25rem',
-                            background: 'linear-gradient(90deg, var(--gold-dim), transparent)',
-                            borderBottom: '1px solid var(--gold-border)',
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', maxWidth: 940, margin: '0 auto' }}>
-                                <div style={{ width: 36, height: 36, borderRadius: '4px', background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--gold)', fontSize: '.85rem', fontFamily: 'Inter, sans-serif' }}>
-                                    {champion.name?.[0]}
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em' }}>بطل البطولة</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--gold)', fontFamily: 'Cairo, sans-serif' }}>{champion.name}</div>
+                {/* KNOCKOUT VIEW (Only shown if phase is knockout) */}
+                {isKO && (
+                    <div>
+                        {/* Champion banner */}
+                        {champion && (
+                            <div style={{
+                                padding: '.85rem 1.25rem',
+                                background: 'linear-gradient(90deg, var(--gold-dim), transparent)',
+                                borderBottom: '1px solid var(--gold-border)',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', maxWidth: 940, margin: '0 auto' }}>
+                                    <div style={{ width: 36, height: 36, borderRadius: '4px', background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--gold)', fontSize: '.85rem', fontFamily: 'Inter, sans-serif' }}>
+                                        {champion.name?.[0]}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em' }}>بطل البطولة</div>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--gold)', fontFamily: 'Cairo, sans-serif' }}>{champion.name}</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <MatchesSection
-                        todayMatches={todayMatches.filter(m => m.phase === 'knockout')}
-                        tomorrowMatches={tomorrowMatches.filter(m => m.phase === 'knockout')}
-                    />
+                        {/* BracketTree */}
+                        {(knockoutMatches.length > 0 || settings?.bracketSlots?.some(s => s.team)) ? (
+                            <div style={{ maxWidth: 940, margin: '0 auto', overflowX: 'auto' }}>
+                                <BracketTree
+                                    knockoutMatches={knockoutMatches}
+                                    bracketSlots={settings?.bracketSlots || []}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '.5rem' }}>لم يتم إعداد قرعة الإقصاء بعد</div>
+                            </div>
+                        )}
 
-                    {/* BracketTree — shown on all screen sizes with horizontal scroll */}
-                    {(knockoutMatches.length > 0 || settings?.bracketSlots?.some(s => s.team)) ? (
-                        <div style={{ maxWidth: 940, margin: '0 auto', overflowX: 'auto' }}>
-                            <BracketTree
-                                knockoutMatches={knockoutMatches}
-                                bracketSlots={settings?.bracketSlots || []}
-                            />
+                        <div style={{ maxWidth: 940, margin: '0 auto' }}>
+                            <MatchHistory matches={history.filter(m => m.phase === 'knockout')} />
                         </div>
-                    ) : (
-                        <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '.5rem' }}>لم يتم إعداد قرعة الإقصاء بعد</div>
-                        </div>
-                    )}
-
-                    <div style={{ maxWidth: 940, margin: '0 auto' }}>
-                        <MatchHistory matches={history.filter(m => m.phase === 'knockout')} />
                     </div>
-                </div>
-            )}
-
+                )}
+            </main>
         </div>
     );
 }

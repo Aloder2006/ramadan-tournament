@@ -7,112 +7,128 @@ export default function GroupTable({ group, teams }) {
         <div style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
-            borderRadius: 6,
+            borderRadius: 12,
             overflow: 'hidden',
+            boxShadow: 'var(--shadow-sm)',
         }}>
             {/* ── Header ── */}
             <div style={{
-                display: 'flex', alignItems: 'center', gap: '.55rem',
-                padding: '.5rem .75rem',
-                background: 'var(--bg-elevated)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '.85rem 1.15rem',
+                background: 'linear-gradient(to left, var(--bg-elevated), var(--bg-card))',
                 borderBottom: '1px solid var(--border)',
             }}>
-                  <span style={{ fontSize: '.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    المجموعة
-                </span>
-                <span style={{
-                    fontSize: '.62rem', fontWeight: 900, color: 'var(--gold)',
-                    background: 'var(--gold-dim)', border: '1px solid var(--gold-border)',
-                    borderRadius: 3, padding: '.1rem .4rem', letterSpacing: '.04em',
-                    fontFamily: 'Inter, sans-serif',
-                }}>
-                    {group}
-                </span>
-        
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.65rem' }}>
+
+                        <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'Cairo, sans-serif', marginTop: -2 }}>
+                            المجموعة
+                        </div>
+                                            <div style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        background: 'var(--gold-dim)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--gold)', fontSize: '.9rem', fontWeight: 900
+                    }}>
+                        {group}
+                    </div>
+                    
+                </div>
             </div>
 
             {sorted.length === 0 ? (
-                <div style={{ padding: '.85rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.78rem' }}>
-                    لا توجد فرق
+                <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.78rem' }}>
+                    لا توجد فرق في هذه المجموعة بعد
                 </div>
             ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr>
-                            <th style={TH('right', 40)}>الفريق</th>
-                            <th style={TH()}>ل</th>
-                            <th style={TH()}>ف</th>
-                            <th style={TH()}>ت</th>
-                            <th style={TH()}>خ</th>
-                            <th style={TH()}>±</th>
-                            <th style={TH()}>نق</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sorted.map((team, i) => {
-                            const qualified = i < 2;
-                            return (
-                                <tr key={team._id} style={{
-                                    borderBottom: i < sorted.length - 1 ? '1px solid color-mix(in srgb, var(--border) 60%, transparent)' : 'none',
-                                    borderRight: qualified ? `3px solid var(--gold)` : '3px solid transparent',
-                                }}>
-                                    {/* Team name */}
-                                    <td style={{ padding: '.45rem .6rem', textAlign: 'right', verticalAlign: 'middle' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
-                                            <span style={{
-                                                fontSize: '.62rem', fontWeight: 700, color: 'var(--text-muted)',
-                                                fontFamily: 'Inter, sans-serif', minWidth: 14, textAlign: 'center',
-                                            }}>{i + 1}</span>
-                                            <span style={{
-                                                fontSize: '.84rem', fontWeight: qualified ? 700 : 500,
-                                                color: qualified ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100,
-                                            }}>{team.name}</span>
-                                        </div>
-                                    </td>
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr>
+                                <th style={TH('right', 120)}>الفريق</th>
+                                <th style={TH()}>ل</th>
+                                <th style={TH()}>ف</th>
+                                <th style={TH()}>ت</th>
+                                <th style={TH()}>خ</th>
+                                <th style={TH()}>+/-</th>
+                                <th style={TH()}>نق</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sorted.map((team, i) => {
+                                const qualified = i < 2;
+                                return (
+                                    <tr key={team._id} style={{
+                                        borderBottom: i < sorted.length - 1 ? '1px solid var(--border)' : 'none',
+                                        transition: 'background .15s',
+                                        background: qualified ? 'rgba(226, 176, 74, 0.03)' : 'transparent',
+                                        borderRight: qualified ? '3px solid var(--gold)' : '3px solid transparent',
+                                    }} className="group-row-hover">
+                                        {/* Team name */}
+                                        <td style={{ padding: '.7rem .85rem', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '.65rem' }}>
+                                                <div style={{
+                                                    fontSize: '.65rem', fontWeight: 800, color: qualified ? 'var(--gold)' : 'var(--text-muted)',
+                                                    fontFamily: 'Inter, sans-serif', minWidth: 16, textAlign: 'center',
+                                                     padding: '2px 4px'
+                                                }}>
+                                                    {i + 1}
+                                                </div>
+                                                <span style={{
+                                                    fontSize: '.9rem', fontWeight: qualified ? 700 : 500,
+                                                    color: qualified ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140,
+                                                    fontFamily: 'Cairo, sans-serif'
+                                                }}>{team.name}</span>
+                                            </div>
+                                        </td>
 
-                                    {/* Stats — all same muted color, no green/red noise */}
-                                    <td style={TD()}>{team.played}</td>
-                                    <td style={TD()}>{team.won}</td>
-                                    <td style={TD()}>{team.drawn}</td>
-                                    <td style={TD()}>{team.lost}</td>
+                                        <td style={TD()}>{team.played}</td>
+                                        <td style={TD()}>{team.won}</td>
+                                        <td style={TD()}>{team.drawn}</td>
+                                        <td style={TD()}>{team.lost}</td>
 
-                                    {/* GD */}
-                                    <td style={{
-                                        ...TD(),
-                                        fontFamily: 'Inter, sans-serif', fontSize: '.75rem',
-                                        color: team.gd > 0 ? 'var(--text-secondary)' : team.gd < 0 ? 'var(--text-muted)' : 'var(--text-muted)',
-                                    }}>
-                                        {team.gd > 0 ? `+${team.gd}` : team.gd}
-                                    </td>
+                                        {/* GD */}
+                                        <td style={{
+                                            ...TD(),
+                                            fontWeight: 600,
+                                            color: team.gd > 0 ? 'var(--success)' : team.gd < 0 ? 'var(--danger)' : 'var(--text-muted)',
+                                        }}>
+                                            {team.gd > 0 ? `+${team.gd}` : team.gd}
+                                        </td>
 
-                                    {/* Points — only gold accent */}
-                                    <td style={{
-                                        ...TD(),
-                                        fontWeight: 900, fontSize: '.88rem',
-                                        color: qualified ? 'var(--gold)' : 'var(--text-secondary)',
-                                        fontFamily: 'Inter, sans-serif',
-                                    }}>
-                                        {team.points}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                        {/* Points */}
+                                        <td style={{
+                                            ...TD(),
+                                            fontWeight: 900, fontSize: '.95rem',
+                                            color: qualified ? 'var(--gold)' : 'var(--text-primary)',
+                                        }}>
+                                            {team.points}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             )}
+
+            <style jsx>{`
+                .group-row-hover:hover {
+                    background: var(--bg-hover) !important;
+                }
+            `}</style>
         </div>
     );
 }
 
 const TH = (align = 'center', minW) => ({
-    padding: '.32rem .5rem',
+    padding: '.6rem .75rem',
     textAlign: align,
-    fontSize: '.6rem',
-    fontWeight: 700,
+    fontSize: '.62rem',
+    fontWeight: 800,
     color: 'var(--text-muted)',
     textTransform: 'uppercase',
-    letterSpacing: '.04em',
+    letterSpacing: '.06em',
     borderBottom: '1px solid var(--border)',
     minWidth: minW,
     whiteSpace: 'nowrap',
@@ -120,10 +136,10 @@ const TH = (align = 'center', minW) => ({
 });
 
 const TD = (align = 'center') => ({
-    padding: '.42rem .5rem',
+    padding: '.7rem .5rem',
     textAlign: align,
-    fontSize: '.82rem',
-    color: 'var(--text-muted)',
+    fontSize: '.85rem',
+    color: 'var(--text-secondary)',
     verticalAlign: 'middle',
     fontFamily: 'Inter, sans-serif',
 });

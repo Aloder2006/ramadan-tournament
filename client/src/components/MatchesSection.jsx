@@ -106,50 +106,109 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     if (!todayMatches.length && !tomorrowMatches.length) return null;
 
     return (
-        <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
-            {/* Tab bar */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
-                {[
-                    { id: 'today', label: 'اليوم', count: todayMatches.length },
-                    { id: 'tomorrow', label: 'الغد', count: tomorrowMatches.length },
-                ].map(t => (
-                    <button key={t.id}
-                        onClick={() => setTab(t.id)}
-                        style={{
-                            flex: 1, padding: '.6rem 1rem', border: 'none',
-                            borderBottom: `2px solid ${tab === t.id ? 'var(--gold)' : 'transparent'}`,
-                            background: tab === t.id ? 'var(--bg-card)' : 'transparent',
-                            color: tab === t.id ? 'var(--gold)' : 'var(--text-muted)',
-                            fontFamily: 'Tajawal, sans-serif', fontSize: '.85rem', fontWeight: 700,
-                            cursor: 'pointer', transition: 'all .12s',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
-                        }}
-                    >
-                        {t.label}
-                        {t.count > 0 && (
-                            <span style={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                minWidth: 18, height: 18, padding: '0 5px', borderRadius: '2px',
-                                background: 'var(--bg-elevated)',
-                                color: tab === t.id ? 'var(--gold)' : 'var(--text-muted)',
-                                border: '1px solid var(--border)',
-                                fontSize: '.62rem', fontWeight: 800,
-                            }}>{t.count}</span>
-                        )}
-                    </button>
-                ))}
+        <div style={{ background: 'var(--bg-elevated)' }}>
+
+
+            {/* Tab bar — Sliding Pill Selector */}
+            <div style={{ padding: '.75rem 1rem', display: 'flex', justifyContent: 'center', background: 'var(--bg-card)', flexDirection: 'column', gap: '.5rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.1em', textAlign: 'center' }}>
+                    مباريات
+                </span>
+                <div style={{
+                    display: 'flex',
+                    background: 'var(--bg-input)',
+                    borderRadius: 50,
+                    padding: '4px',
+                    border: '1px solid var(--border)',
+                    width: 'fit-content',
+                    minWidth: 240,
+                    position: 'relative', // For absolute indicator
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
+                }}>
+                    {/* Sliding Indicator */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 4,
+                        bottom: 4,
+                        right: tab === 'today' ? 4 : 'calc(50% - 0px)', // Move right to left (RTL)
+                        width: 'calc(50% - 4px)',
+                        background: 'var(--bg-hover)',
+                        borderRadius: 50,
+                        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        zIndex: 0,
+                    }} />
+
+                    {[
+                        { id: 'today', label: 'اليوم', count: todayMatches.length },
+                        { id: 'tomorrow', label: 'الغد', count: tomorrowMatches.length },
+                    ].map(t => {
+                        const active = tab === t.id;
+                        return (
+                            <button key={t.id}
+                                onClick={() => setTab(t.id)}
+                                style={{
+                                    flex: 1, padding: '.55rem 0',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: active ? 'var(--gold)' : 'var(--text-muted)',
+                                    fontFamily: 'Tajawal, sans-serif', fontSize: '.85rem', fontWeight: 800,
+                                    cursor: 'pointer', transition: 'color .3s ease',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
+                                    zIndex: 1,
+                                    position: 'relative',
+                                }}
+                            >
+                                <span>{t.label}</span>
+                                {t.count > 0 && (
+                                    <span style={{
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        minWidth: 16, height: 16, padding: '0 4px', borderRadius: 50,
+                                        background: active ? 'var(--gold-dim)' : 'var(--bg-elevated)',
+                                        color: active ? 'var(--gold)' : 'var(--text-muted)',
+                                        fontSize: '.62rem', fontWeight: 900,
+                                    }}>{t.count}</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* Cards */}
-            {current.length === 0 ? (
-                <div style={{ padding: '1.2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.82rem' }}>
-                    لا توجد مباريات
+            {/* Panels with Slide Animation */}
+            <div style={{ overflow: 'hidden', position: 'relative', background: 'var(--bg-base)' }}>
+                <div style={{
+                    display: 'flex',
+                    width: '200%',
+                    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: `translateX(${tab === 'today' ? '0%' : '50%'})`,
+                }}>
+                    {/* TODAY PANEL */}
+                    <div style={{ width: '50%', flexShrink: 0 }}>
+                        {todayMatches.length === 0 ? (
+                            <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>
+                                لا توجد مباريات اليوم
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                                {todayMatches.map(m => <MatchCard key={m._id} m={m} isTomorrow={false} />)}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* TOMORROW PANEL */}
+                    <div style={{ width: '50%', flexShrink: 0 }}>
+                        {tomorrowMatches.length === 0 ? (
+                            <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>
+                                لا توجد مباريات غداً
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                                {tomorrowMatches.map(m => <MatchCard key={m._id} m={m} isTomorrow={true} />)}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
-                    {current.map(m => <MatchCard key={m._id} m={m} isTomorrow={tab === 'tomorrow'} />)}
-                </div>
-            )}
+            </div>
         </div>
     );
 }
