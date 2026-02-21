@@ -54,7 +54,7 @@ export default function GroupTable({ group, teams }) {
                             return (
                                 <tr key={team._id} style={{
                                     borderBottom: i < sorted.length - 1 ? '1px solid color-mix(in srgb, var(--border) 60%, transparent)' : 'none',
-                                    borderRight: qualified ? `3px solid ${i === 0 ? 'var(--gold)' : 'color-mix(in srgb, var(--gold) 45%, transparent)'}` : '3px solid transparent',
+                                    borderRight: qualified ? `3px solid var(--gold)` : '3px solid transparent',
                                 }}>
                                     {/* Team name */}
                                     <td style={{ padding: '.45rem .6rem', textAlign: 'right', verticalAlign: 'middle' }}>
