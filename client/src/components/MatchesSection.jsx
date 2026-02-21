@@ -190,7 +190,14 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                                 لا توجد مباريات اليوم
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.8rem',
+                                padding: '1rem 1.25rem',
+                                maxWidth: 640,
+                                margin: '0 auto'
+                            }}>
                                 {todayMatches.map(m => <MatchCard key={m._id} m={m} isTomorrow={false} />)}
                             </div>
                         )}
@@ -203,7 +210,14 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                                 لا توجد مباريات غداً
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.8rem',
+                                padding: '1rem 1.25rem',
+                                maxWidth: 640,
+                                margin: '0 auto'
+                            }}>
                                 {tomorrowMatches.map(m => <MatchCard key={m._id} m={m} isTomorrow={true} />)}
                             </div>
                         )}
