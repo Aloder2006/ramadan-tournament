@@ -156,6 +156,11 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
                                     zIndex: 1,
                                     position: 'relative',
+                                    WebkitTapHighlightColor: 'transparent',
+                                    WebkitUserSelect: 'none',
+                                    userSelect: 'none',
+                                    touchAction: 'manipulation',
+                                    outline: 'none',
                                 }}
                             >
                                 <span>{t.label}</span>
