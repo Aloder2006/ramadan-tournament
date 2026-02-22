@@ -155,55 +155,177 @@ export default function MatchesManager({ matches, teams, onRefresh, defaultPhase
             </div>
 
             {showAddForm && (
-                <form onSubmit={handleAdd} style={{ padding: '.85rem 1rem', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '.65rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(155px,1fr))', gap: '.65rem' }}>
-                        <div><label style={lbl}>المرحلة</label><select style={inp()} value={newMatch.phase} onChange={set('phase')}><option value="groups">مجموعات</option><option value="knockout">إقصاء</option></select></div>
-                        {newMatch.phase === 'groups'
-                            ? <div><label style={lbl}>المجموعة</label><select style={inp()} value={newMatch.group} onChange={set('group')}>{GROUPS.map(g => <option key={g} value={g}>المجموعة {g}</option>)}</select></div>
-                            : <div><label style={lbl}>الدور</label><select style={inp()} value={newMatch.knockoutRound} onChange={set('knockoutRound')}><option value="">-- اختر --</option>{KO_ROUNDS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>}
-                        <div><label style={lbl}>الفريق الأول</label><select style={inp()} value={newMatch.team1} onChange={set('team1')}><option value="">-- اختر --</option>{teams.map(t => <option key={t._id} value={t._id}>{t.name} ({t.group})</option>)}</select></div>
-                        <div><label style={lbl}>الفريق الثاني</label><select style={inp()} value={newMatch.team2} onChange={set('team2')}><option value="">-- اختر --</option>{teams.map(t => <option key={t._id} value={t._id}>{t.name} ({t.group})</option>)}</select></div>
-                        <div><label style={lbl}>التاريخ والوقت</label><input type="datetime-local" style={inp()} value={newMatch.matchDate} onChange={set('matchDate')} /></div>
-                    </div>
-                    {addError && <div style={{ fontSize: '.8rem', color: 'var(--danger)', padding: '.35rem .6rem', background: 'rgba(224,75,75,.1)', borderRadius: 3, border: '1px solid var(--danger)' }}>{addError}</div>}
-                    <div><button type="submit" style={{ padding: '.45rem 1.25rem', border: 'none', borderRadius: 4, background: 'var(--gold)', color: '#000', fontWeight: 800, fontSize: '.88rem', cursor: 'pointer', fontFamily: 'inherit' }}>+ إضافة</button></div>
-                </form>
+                <div style={{ padding: '1rem', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}>
+                    <form onSubmit={handleAdd} style={{ 
+                        background: 'var(--bg-card)', padding: '1.25rem', borderRadius: 8, 
+                        border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '.75rem', marginBottom: '.25rem' }}>
+                            <span style={{ fontSize: '.9rem', fontWeight: 800, color: 'var(--gold)' }}>إضافة مباراة جديدة</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                            <div>
+                                <label style={lbl}>المجموعة</label>
+                                <select 
+                                    style={inp()} 
+                                    value={newMatch.group} 
+                                    onChange={e => setNewMatch(p => ({ ...p, group: e.target.value, team1: '', team2: '' }))}
+                                >
+                                    {GROUPS.map(g => <option key={g} value={g}>المجموعة {g}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={lbl}>التاريخ والوقت</label>
+                                <input type="datetime-local" style={inp()} value={newMatch.matchDate} onChange={set('matchDate')} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '.75rem', alignItems: 'center', background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 6, border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+                                <label style={{...lbl, textAlign: 'right'}}>الفريق الأول</label>
+                                <select style={inp({ textAlign: 'right', fontWeight: 700, borderColor: newMatch.team1 ? 'var(--gold)' : 'var(--border)' })} value={newMatch.team1} onChange={set('team1')}>
+                                    <option value="">-- اختر --</option>
+                                    {teams.filter(t => t.group === newMatch.group).map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ fontSize: '.75rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '.2rem .6rem', borderRadius: 4, border: '1px solid var(--border)', marginTop: '1.2rem' }}>ضد</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+                                <label style={{...lbl, textAlign: 'left'}}>الفريق الثاني</label>
+                                <select style={inp({ textAlign: 'left', fontWeight: 700, borderColor: newMatch.team2 ? 'var(--gold)' : 'var(--border)' })} value={newMatch.team2} onChange={set('team2')}>
+                                    <option value="">-- اختر --</option>
+                                    {teams.filter(t => t.group === newMatch.group).map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        {addError && <div style={{ fontSize: '.8rem', color: 'var(--danger)', padding: '.5rem .75rem', background: 'rgba(224,75,75,.1)', borderRadius: 4, border: '1px solid var(--danger)' }}>{addError}</div>}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '.5rem' }}>
+                            <button type="submit" style={{ padding: '.5rem 1.75rem', border: 'none', borderRadius: 4, background: 'var(--gold)', color: '#000', fontWeight: 800, fontSize: '.9rem', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '.4rem', transition: 'filter 0.2s' }} onMouseEnter={e => e.currentTarget.style.filter='brightness(1.1)'} onMouseLeave={e => e.currentTarget.style.filter='none'}><span>+</span> إضافة المباراة</button>
+                        </div>
+                    </form>
+                </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {matches.length === 0
-                    ? <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>لا توجد مباريات</div>
-                    : matches.map(m => {
-                        const done = m.status === 'Completed';
-                        const w1 = done && (m.hasPenalties ? m.penaltyScore1 > m.penaltyScore2 : m.score1 > m.score2);
-                        const w2 = done && (m.hasPenalties ? m.penaltyScore2 > m.penaltyScore1 : m.score2 > m.score1);
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {matches.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>لا توجد مباريات</div>
+                ) : (
+                    GROUPS.map(g => {
+                        const groupMatches = matches.filter(m => m.phase !== 'knockout' && m.group === g);
+                        if (groupMatches.length === 0) return null;
+
                         return (
-                            <div key={m._id} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.48rem .85rem', borderBottom: '1px solid var(--border)', background: done ? 'var(--bg-elevated)' : 'var(--bg-card)' }}>
-                                <span style={{ fontSize: '.6rem', fontWeight: 800, color: 'var(--gold)', background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', padding: '.06rem .3rem', borderRadius: 3, minWidth: 20, textAlign: 'center', flexShrink: 0 }}>{m.phase === 'knockout' ? (m.knockoutRound?.[0] || 'إ') : m.group}</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
-                                    <span style={{ fontSize: '.8rem', fontWeight: w1 ? 900 : 600, color: w1 ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.team1?.name}{m.redCards1 > 0 && <span style={{ marginRight: '.25rem', fontSize: '.58rem', color: 'var(--danger)', background: 'rgba(224,75,75,.15)', padding: '0 .2rem', borderRadius: 2 }}>خ{m.redCards1}</span>}</span>
-                                    <Av name={m.team1?.name} win={w1} />
+                            <div key={g} style={{ background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                                {/* Group Header */}
+                                <div style={{
+                                    padding: '0.75rem 1rem',
+                                    background: 'var(--bg-card)',
+                                    borderBottom: '1px solid var(--border)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <span style={{
+                                        width: 24, height: 24, borderRadius: 4,
+                                        background: 'var(--gold-dim)', border: '1px solid var(--gold-border)',
+                                        color: 'var(--gold)', fontWeight: 900, fontSize: '.75rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontFamily: 'Inter, sans-serif'
+                                    }}>{g}</span>
+                                    <h3 style={{ fontSize: '.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>المجموعة {g}</h3>
+                                    <span style={{ marginRight: 'auto', fontSize: '.7rem', color: 'var(--text-muted)', fontWeight: 700, padding: '.15rem .5rem', background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid var(--border)' }}>{groupMatches.length} مباريات</span>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                                    <div style={{ display: 'flex', gap: 2, alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 3, padding: '.15rem .45rem' }}>
-                                        <span style={{ fontFamily: 'Inter,sans-serif', fontWeight: 900, fontSize: '.88rem', color: w1 ? 'var(--gold)' : 'var(--text-secondary)' }}>{done ? m.score1 : '–'}</span>
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '.65rem', margin: '0 2px' }}>:</span>
-                                        <span style={{ fontFamily: 'Inter,sans-serif', fontWeight: 900, fontSize: '.88rem', color: w2 ? 'var(--gold)' : 'var(--text-secondary)' }}>{done ? m.score2 : '–'}</span>
-                                    </div>
-                                    {m.hasPenalties && <span style={{ fontSize: '.52rem', color: 'var(--text-muted)', marginTop: 1 }}>ج {m.penaltyScore1}–{m.penaltyScore2}</span>}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flex: 1, minWidth: 0 }}>
-                                    <Av name={m.team2?.name} win={w2} />
-                                    <span style={{ fontSize: '.8rem', fontWeight: w2 ? 900 : 600, color: w2 ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.redCards2 > 0 && <span style={{ marginLeft: '.25rem', fontSize: '.58rem', color: 'var(--danger)', background: 'rgba(224,75,75,.15)', padding: '0 .2rem', borderRadius: 2 }}>خ{m.redCards2}</span>}{m.team2?.name}</span>
-                                </div>
-                                <span style={{ fontSize: '.6rem', fontWeight: 700, padding: '.12rem .4rem', borderRadius: 3, flexShrink: 0, background: done ? 'rgba(61,186,114,.15)' : 'rgba(226,176,74,.12)', color: done ? 'var(--success)' : 'var(--gold)', border: `1px solid ${done ? 'var(--success)' : 'var(--gold-border)'}` }}>{done ? 'منتهية' : 'انتظار'}</span>
-                                <div style={{ display: 'flex', gap: '.3rem', flexShrink: 0 }}>
-                                    <button onClick={() => setEditingMatch(m)} style={{ width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 3, background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✏</button>
-                                    <button onClick={() => handleDelete(m._id)} disabled={deletingId === m._id} style={{ width: 26, height: 26, border: '1px solid var(--danger)', borderRadius: 3, background: 'rgba(224,75,75,.1)', color: 'var(--danger)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: deletingId === m._id ? .5 : 1 }}>{deletingId === m._id ? '…' : '🗑'}</button>
+
+                                {/* Group Matches Grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1px', background: 'var(--border)' }}>
+                                    {groupMatches.map(m => {
+                                        const done = m.status === 'Completed';
+                                        const w1 = done && (m.hasPenalties ? m.penaltyScore1 > m.penaltyScore2 : m.score1 > m.score2);
+                                        const w2 = done && (m.hasPenalties ? m.penaltyScore2 > m.penaltyScore1 : m.score2 > m.score1);
+                                        const timeStr = m.matchDate ? new Date(m.matchDate).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : null;
+                                        const dayStr = m.matchDate ? new Date(m.matchDate).toLocaleDateString('ar-EG', { day: '2-digit', month: 'short' }) : null;
+
+                                        return (
+                                            <div key={m._id} style={{
+                                                background: done ? 'var(--bg-elevated)' : 'var(--bg-card)',
+                                                padding: '1rem',
+                                                display: 'flex', flexDirection: 'column', gap: '0.65rem',
+                                                position: 'relative',
+                                                transition: 'background 0.2s',
+                                                cursor: 'default'
+                                            }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                                onMouseLeave={e => e.currentTarget.style.background = done ? 'var(--bg-elevated)' : 'var(--bg-card)'}
+                                            >
+                                                {/* Header: Date & Actions */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                                                        <span style={{ 
+                                                            fontSize: '.55rem', fontWeight: 800, padding: '.15rem .4rem', borderRadius: 3, 
+                                                            background: done ? 'rgba(61,186,114,.1)' : 'rgba(226,176,74,.1)', 
+                                                            color: done ? 'var(--success)' : 'var(--gold)', border: `1px solid ${done ? 'rgba(61,186,114,.3)' : 'rgba(226,176,74,.3)'}`
+                                                        }}>{done ? 'منتهية' : 'انتظار'}</span>
+                                                        {m.matchDate && (
+                                                            <span style={{ fontSize: '.65rem', color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                                                {dayStr} {timeStr && `• ${timeStr}`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '.4rem' }}>
+                                                        <button onClick={() => setEditingMatch(m)} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 4, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '.9rem', transition: 'all 0.2s' }} onMouseEnter={e => {e.currentTarget.style.background='var(--gold)'; e.currentTarget.style.color='#000'; e.currentTarget.style.borderColor='var(--gold)'}} onMouseLeave={e => {e.currentTarget.style.background='var(--bg-elevated)'; e.currentTarget.style.color='var(--text-primary)'; e.currentTarget.style.borderColor='var(--border)'}}>✏️</button>
+                                                        <button onClick={() => handleDelete(m._id)} disabled={deletingId === m._id} style={{ background: 'rgba(224,75,75,.1)', border: '1px solid var(--danger)', borderRadius: 4, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', cursor: 'pointer', fontSize: '.9rem', opacity: deletingId === m._id ? .5 : 1, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='var(--danger)'} onMouseLeave={e => e.currentTarget.style.background='rgba(224,75,75,.1)'}>{deletingId === m._id ? '…' : '🗑'}</button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Match Body */}
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0' }}>
+                                                    {/* Team 1 */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
+                                                        <span style={{ fontSize: '.85rem', fontWeight: w1 ? 900 : 700, color: w1 ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {m.team1?.name}
+                                                        </span>
+                                                        {m.redCards1 > 0 && (
+                                                            <div style={{ width: 14, height: 18, background: '#e53e3e', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.6rem', color: '#fff', fontWeight: 900, fontFamily: 'Inter, sans-serif', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+                                                                {m.redCards1}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Score */}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 .5rem', flexShrink: 0 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: done ? 'var(--bg-card)' : 'transparent', borderRadius: 4, padding: done ? '.2rem .5rem' : 0, border: done ? '1px solid var(--border)' : 'none' }}>
+                                                            {done ? (
+                                                                <>
+                                                                    <span style={{ fontFamily: 'Inter,sans-serif', fontWeight: 900, fontSize: '1.05rem', color: w1 ? 'var(--gold)' : 'var(--text-primary)' }}>{m.score1}</span>
+                                                                    <span style={{ color: 'var(--text-muted)', fontSize: '.7rem' }}>–</span>
+                                                                    <span style={{ fontFamily: 'Inter,sans-serif', fontWeight: 900, fontSize: '1.05rem', color: w2 ? 'var(--gold)' : 'var(--text-primary)' }}>{m.score2}</span>
+                                                                </>
+                                                            ) : (
+                                                                <span style={{ fontSize: '.75rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--bg-elevated)', padding: '.15rem .5rem', borderRadius: 4, border: '1px solid var(--border)' }}>VS</span>
+                                                            )}
+                                                        </div>
+                                                        {m.hasPenalties && <span style={{ fontSize: '.55rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 600 }}>ج {m.penaltyScore1}–{m.penaltyScore2}</span>}
+                                                    </div>
+
+                                                    {/* Team 2 */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0, flexDirection: 'row-reverse' }}>
+                                                        <span style={{ fontSize: '.85rem', fontWeight: w2 ? 900 : 700, color: w2 ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left' }}>
+                                                            {m.team2?.name}
+                                                        </span>
+                                                        {m.redCards2 > 0 && (
+                                                            <div style={{ width: 14, height: 18, background: '#e53e3e', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.6rem', color: '#fff', fontWeight: 900, fontFamily: 'Inter, sans-serif', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+                                                                {m.redCards2}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );
-                    })}
+                    })
+                )}
             </div>
         </>
     );

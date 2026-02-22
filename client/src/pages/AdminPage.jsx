@@ -102,7 +102,9 @@ function TeamsTable({ teams, onRefresh }) {
 function QualifiedSelector({ teams, settings, onSaved }) {
     const [selected, setSelected] = useState(() => (settings?.qualifiedTeams || []).map(t => t._id || t));
     const [msg, setMsg] = useState('');
-    useEffect(() => setSelected((settings?.qualifiedTeams || []).map(t => t._id || t)), [settings]);
+    useEffect(() => {
+        setSelected((settings?.qualifiedTeams || []).map(t => t._id || t));
+    }, [settings]);
 
     const toggle = id => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
     const save = async () => {

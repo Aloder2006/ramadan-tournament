@@ -30,7 +30,7 @@ export default function HomePage() {
                 if (sett && !sett.message) {
                     setSettings(sett);
                     applySettingsColors(sett);
-                    if (sett.phase === 'knockout') setView('knockout');
+                    // setView is not defined here, removing it to fix the ReferenceError
                 }
                 setKnockoutMatches(Array.isArray(ko) ? ko : []);
             } catch (e) { console.error(e); }

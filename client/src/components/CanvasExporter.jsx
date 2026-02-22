@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
+import { useRef, useState, useEffect } from 'react';
+import * as htmlToImage from 'html-to-image';
+import { X, Download } from 'lucide-react';
 
 /* ─── Default export configuration ─── */
 const DEFAULT_CFG = {
@@ -16,24 +17,28 @@ const DEFAULT_CFG = {
     showWatermark: true,
     showGroupBadge: true,
     watermarkText: '',         // fallback = tournamentName
-    cardStyle: 'dark',      // dark | flat | glass
+    cardStyle: 'dark',      // dark | flat
 };
 
 const FONTS = ['Tajawal', 'Cairo', 'Lalezar', 'Barlow Condensed', 'Oswald', 'Amiri', 'Rubik'];
 
 /* ─── Download helper ─── */
-async function capture(id, filename, cfg) {
-    const el = document.getElementById(id);
+async function capture(el, filename, cfg) {
     if (!el) { alert('العنصر غير موجود'); return; }
-    const canvas = await html2canvas(el, {
-        backgroundColor: cfg.bgFrom,
-        scale: cfg.scale,
-        useCORS: true,
-        logging: false,
+
+    // Using html-to-image
+    const dataUrl = await htmlToImage.toPng(el, {
+        quality: 1.0,
+        pixelRatio: cfg.scale,
+        style: {
+            transform: 'scale(1)',
+            transformOrigin: 'top left'
+        }
     });
+
     const link = document.createElement('a');
     link.download = filename;
-    link.href = canvas.toDataURL('image/png');
+    link.href = dataUrl;
     link.click();
 }
 
@@ -75,7 +80,7 @@ function ExportHeader({ settings, subtitle, cfg }) {
             </div>
             {cfg.showGroupBadge && (
                 <div style={{ fontSize: 14, color: cfg.cardBorder, border: `1px solid ${cfg.cardBorder}`, padding: '4px 12px', borderRadius: 4, fontFamily: 'Inter, sans-serif' }}>
-                    ramadan-tournament
+                    {settings?.tournamentName ? settings.tournamentName.substring(0, 20) : 'رمضانيات'}
                 </div>
             )}
         </div>
@@ -85,14 +90,15 @@ function ExportHeader({ settings, subtitle, cfg }) {
 /* ─────────────────────────────────────────────────
    EXPORT WRAPPER
 ───────────────────────────────────────────────── */
-function ExportWrapper({ id, children, settings, cfg, subtitle, square = false }) {
+function ExportWrapper({ innerRef, children, settings, cfg, subtitle, square = false }) {
+    // Note: We don't hide it with position:fixed anymore; the parent handles visibility/scaling
     return (
-        <div id={id} style={{
+        <div ref={innerRef} style={{
             width: 1080, minHeight: square ? 1080 : undefined, height: square ? 1080 : undefined,
             background: bgGrad(cfg),
             fontFamily: `'${cfg.fontFamily}', sans-serif`,
             direction: 'rtl', padding: 56, boxSizing: 'border-box',
-            position: 'fixed', left: -9999, top: -9999, zIndex: -1,
+            position: 'relative'
         }}>
             <ExportHeader settings={settings} subtitle={subtitle} cfg={cfg} />
             {children}
@@ -108,11 +114,11 @@ function ExportWrapper({ id, children, settings, cfg, subtitle, square = false }
 /* ─────────────────────────────────────────────────
    TEMPLATE: ALL GROUPS
 ───────────────────────────────────────────────── */
-function AllGroupsTemplate({ id, teams, settings, cfg }) {
+function AllGroupsTemplate({ innerRef, teams, settings, cfg }) {
     const GROUPS = ['أ', 'ب', 'ج', 'د'];
     const primary = cfg.accentColor;
     return (
-        <div id={id} style={{ width: 1080, minHeight: 1350, background: bgGrad(cfg), fontFamily: `'${cfg.fontFamily}', sans-serif`, direction: 'rtl', padding: 56, boxSizing: 'border-box', position: 'fixed', left: -9999, top: -9999, zIndex: -1 }}>
+        <div ref={innerRef} style={{ width: 1080, minHeight: 1350, background: bgGrad(cfg), fontFamily: `'${cfg.fontFamily}', sans-serif`, direction: 'rtl', padding: 56, boxSizing: 'border-box', position: 'relative' }}>
             <ExportHeader settings={settings} subtitle="جداول المجموعات" cfg={cfg} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                 {GROUPS.map(g => {
@@ -155,11 +161,11 @@ function AllGroupsTemplate({ id, teams, settings, cfg }) {
 /* ─────────────────────────────────────────────────
    TEMPLATE: SINGLE GROUP
 ───────────────────────────────────────────────── */
-function GroupExportTemplate({ id, group, teams, settings, cfg }) {
+function GroupExportTemplate({ innerRef, group, teams, settings, cfg }) {
     const sorted = [...teams].sort((a, b) => b.points - a.points || (b.gf - b.ga) - (a.gf - a.ga));
     const primary = cfg.accentColor;
     return (
-        <ExportWrapper id={id} settings={settings} cfg={cfg} subtitle={`المجموعة ${group}`}>
+        <ExportWrapper innerRef={innerRef} settings={settings} cfg={cfg} subtitle={`المجموعة ${group}`}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 26 }}>
                 <thead>
                     <tr style={{ background: cardBg(cfg) }}>
@@ -192,7 +198,7 @@ function GroupExportTemplate({ id, group, teams, settings, cfg }) {
 /* ─────────────────────────────────────────────────
    TEMPLATE: MATCH CARD (upcoming or result)
 ───────────────────────────────────────────────── */
-function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
+function MatchCardTemplate({ innerRef, match, showResult, settings, cfg }) {
     const done = match.status === 'Completed' && showResult;
     const primary = cfg.accentColor;
     const fmt = (d) => d ? new Date(d).toLocaleDateString('ar-EG', { weekday: 'long', day: '2-digit', month: 'long' }) : null;
@@ -201,7 +207,7 @@ function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
     const w2 = done && (match.hasPenalties ? match.penaltyScore2 > match.penaltyScore1 : match.score2 > match.score1);
     const isKO = match.phase === 'knockout';
     return (
-        <div id={id} style={{ width: 1080, height: 1080, background: bgGrad(cfg), fontFamily: `'${cfg.fontFamily}', sans-serif`, direction: 'rtl', padding: 60, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'fixed', left: -9999, top: -9999, zIndex: -1 }}>
+        <div ref={innerRef} style={{ width: 1080, height: 1080, background: bgGrad(cfg), fontFamily: `'${cfg.fontFamily}', sans-serif`, direction: 'rtl', padding: 60, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             {/* Logo */}
             <div style={{ fontSize: 32, fontWeight: 900, color: primary, marginBottom: 8, fontFamily: `'${settings?.logoFont || cfg.fontFamily}', sans-serif` }}>
                 {settings?.tournamentName || 'دوري رمضان'}
@@ -213,7 +219,7 @@ function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
             {/* Teams */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 40, width: '100%', justifyContent: 'center' }}>
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                    {w1 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800}}>فائز</div>}
+                    {w1 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800 }}>فائز</div>}
                     <div style={{ fontSize: 44, fontWeight: 900, color: w1 ? primary : cfg.textPrimary }}>{match.team1?.name}</div>
                 </div>
                 <div style={{ padding: '24px 44px', background: cardBg(cfg), borderRadius: 6, border: `1px solid ${done ? primary : cfg.cardBorder}`, textAlign: 'center', minWidth: 200, boxShadow: done ? `0 0 40px ${primary}30` : 'none' }}>
@@ -227,7 +233,7 @@ function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
                     )}
                 </div>
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                    {w2 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800}}>فائز</div>}
+                    {w2 && <div style={{ fontSize: 16, color: primary, marginBottom: 6, fontWeight: 800 }}>فائز</div>}
                     <div style={{ fontSize: 44, fontWeight: 900, color: w2 ? primary : cfg.textPrimary }}>{match.team2?.name}</div>
                 </div>
             </div>
@@ -256,12 +262,12 @@ function MatchCardTemplate({ id, match, showResult, settings, cfg }) {
 /* ─────────────────────────────────────────────────
    TEMPLATE: UPCOMING MATCHES LIST
 ───────────────────────────────────────────────── */
-function UpcomingMatchesTemplate({ id, matches, settings, cfg }) {
+function UpcomingMatchesTemplate({ innerRef, matches, settings, cfg }) {
     const pending = matches.filter(m => m.status === 'Pending');
     const primary = cfg.accentColor;
     const fmt = (d) => d ? new Date(d).toLocaleDateString('ar-EG', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : null;
     return (
-        <ExportWrapper id={id} settings={settings} cfg={cfg} subtitle="المباريات القادمة">
+        <ExportWrapper innerRef={innerRef} settings={settings} cfg={cfg} subtitle="المباريات القادمة">
             {pending.map(m => (
                 <div key={m._id} style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16, background: cardBg(cfg), borderRadius: 4, padding: '18px 22px', border: `1px solid ${cfg.cardBorder}` }}>
                     <span style={{ fontSize: 14, color: cfg.textSecondary, minWidth: 90 }}>{m.phase === 'knockout' ? m.knockoutRound : `المج·${m.group}`}</span>
@@ -278,11 +284,11 @@ function UpcomingMatchesTemplate({ id, matches, settings, cfg }) {
 /* ─────────────────────────────────────────────────
    TEMPLATE: KNOCKOUT BRACKET
 ───────────────────────────────────────────────── */
-function KnockoutExportTemplate({ id, matches, settings, cfg }) {
+function KnockoutExportTemplate({ innerRef, matches, settings, cfg }) {
     const rounds = ['ربع النهائي', 'نصف النهائي', 'النهائي', 'نهائي الترتيب'];
     const primary = cfg.accentColor;
     return (
-        <ExportWrapper id={id} settings={settings} cfg={cfg} subtitle="شجرة الإقصاء">
+        <ExportWrapper innerRef={innerRef} settings={settings} cfg={cfg} subtitle="شجرة الإقصاء">
             {rounds.map(round => {
                 const rm = matches.filter(m => m.knockoutRound === round);
                 if (!rm.length) return null;
@@ -339,11 +345,11 @@ function ColorRow({ label, value, onChange }) {
    THEME PRESETS
 ───────────────────────────────────────────────── */
 const PRESETS = [
-    { label: 'ذهبي داكن', cfg: { bgFrom: '#0c0f16', bgTo: '#181d2a', accentColor: '#e2b04a', cardBg: '#181d2a', cardBorder: '#1f2638' } },
-    { label: 'ليل أزرق', cfg: { bgFrom: '#070d1a', bgTo: '#0f1e3a', accentColor: '#4a9ee2', cardBg: '#0f1e3a', cardBorder: '#162744' } },
-    { label: 'أخضر رياضي', cfg: { bgFrom: '#070f0a', bgTo: '#0e1f14', accentColor: '#3dba72', cardBg: '#0e1f14', cardBorder: '#143322' } },
+    { label: 'ذهبي داكن', cfg: { bgFrom: '#0c0f16', bgTo: '#181d2a', accentColor: '#e2b04a', textPrimary: '#dde2ed',cardBg: '#181d2a',textSecondary: '#7a8aa0', cardBorder: '#1f2638' } },
+    { label: 'ليل أزرق', cfg: { bgFrom: '#070d1a', bgTo: '#0f1e3a', accentColor: '#4a9ee2',textPrimary: '#dde2ed', cardBg: '#0f1e3a',textSecondary: '#7a8aa0', cardBorder: '#162744' } },
+    { label: 'أخضر رياضي', cfg: { bgFrom: '#070f0a', bgTo: '#0e1f14', accentColor: '#3dba72',textPrimary: '#dde2ed', cardBg: '#0e1f14',textSecondary: '#7a8aa0', cardBorder: '#143322' } },
     { label: 'أبيض نظيف', cfg: { bgFrom: '#f4f6fa', bgTo: '#e8edf5', accentColor: '#1a73e8', textPrimary: '#1a1e2e', textSecondary: '#555e78', cardBg: '#ffffff', cardBorder: '#dde2ed' } },
-    { label: 'بنفسجي', cfg: { bgFrom: '#0d0b1a', bgTo: '#16102e', accentColor: '#8b5cf6', cardBg: '#16102e', cardBorder: '#241b44' } },
+    { label: 'بنفسجي', cfg: { bgFrom: '#0d0b1a', bgTo: '#16102e', accentColor: '#8b5cf6',textPrimary: '#dde2ed', cardBg: '#16102e',textSecondary: '#7a8aa0', cardBorder: '#241b44' } },
 ];
 
 /* ─────────────────────────────────────────────────
@@ -351,22 +357,64 @@ const PRESETS = [
 ───────────────────────────────────────────────── */
 export default function CanvasExporter({ teams, matches, settings }) {
     const GROUPS = ['أ', 'ب', 'ج', 'د'];
-    const [cfg, setCfg] = useState({ ...DEFAULT_CFG, textPrimary: settings?.colorTextPrimary || DEFAULT_CFG.textPrimary, accentColor: settings?.primaryColor || DEFAULT_CFG.accentColor });
-    const [exporting, setExp] = useState(null);
+    const [cfg, setCfg] = useState(() => {
+        try {
+            const saved = localStorage.getItem('canvasExporterCfg');
+            if (saved) return { ...DEFAULT_CFG, ...JSON.parse(saved) };
+        } catch (e) { }
+        return { ...DEFAULT_CFG, textPrimary: settings?.colorTextPrimary || DEFAULT_CFG.textPrimary, accentColor: settings?.primaryColor || DEFAULT_CFG.accentColor };
+    });
+
+    useEffect(() => {
+        localStorage.setItem('canvasExporterCfg', JSON.stringify(cfg));
+    }, [cfg]);
+
+    const [exporting, setExp] = useState(false);
     const [activeSection, setActiveSection] = useState('groups');
+
+    // Preview state
+    const [previewTarget, setPreviewTarget] = useState(null); // stores object like { type: 'all-groups', matchId: '...', group: 'A' }
+    const [previewFilename, setPreviewFilename] = useState('');
+    const targetRef = useRef(null);
+    const containerRef = useRef(null);
+    const [scale, setScale] = useState(0.5);
+
+    // Calculate scale to fit in modal
+    useEffect(() => {
+        if (previewTarget && containerRef.current && targetRef.current) {
+            const containerW = containerRef.current.offsetWidth - 60;
+            const containerH = containerRef.current.offsetHeight - 60;
+            const targetW = targetRef.current.offsetWidth;
+            const targetH = targetRef.current.offsetHeight;
+            const scaleW = containerW / targetW;
+            const scaleH = containerH / targetH;
+            setScale(Math.min(scaleW, scaleH, 1));
+        }
+    }, [previewTarget, cfg.scale]); // Re-calculate if scale changes (which triggers re-render)
 
     const set = (key, val) => setCfg(p => ({ ...p, [key]: val }));
     const applyPreset = (p) => setCfg(prev => ({ ...prev, ...{ textPrimary: p.cfg.textPrimary || prev.textPrimary, textSecondary: p.cfg.textSecondary || prev.textSecondary }, ...p.cfg }));
 
-    const doExport = async (id, filename) => {
-        setExp(id);
-        try { await capture(id, filename, cfg); }
-        finally { setExp(null); }
+    const openPreview = (type, filename, data = {}) => {
+        setPreviewTarget({ type, ...data });
+        setPreviewFilename(filename);
     };
 
-    const ExportBtn = ({ id, label, filename }) => (
-        <button className="btn btn-ghost btn-sm" onClick={() => doExport(id, filename)} disabled={exporting === id} style={{ justifyContent: 'flex-start' }}>
-            {exporting === id ? 'جاري التصدير...' : label}
+    const closePreview = () => {
+        setPreviewTarget(null);
+        setPreviewFilename('');
+    };
+
+    const doExport = async () => {
+        if (!targetRef.current) return;
+        setExp(true);
+        try { await capture(targetRef.current, previewFilename, cfg); }
+        finally { setExp(false); }
+    };
+
+    const ExportBtn = ({ label, filename, type, data }) => (
+        <button className="btn btn-ghost btn-sm" onClick={() => openPreview(type, filename, data)} style={{ justifyContent: 'flex-start' }}>
+            معاينة: {label}
         </button>
     );
 
@@ -382,70 +430,135 @@ export default function CanvasExporter({ teams, matches, settings }) {
         { id: 'knockout', label: 'الإقصاء' },
     ];
 
-    return (
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {/* ── Settings Panel ── */}
-            <div style={{ flex: '0 0 260px', minWidth: 220, display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
-                <div className="export-settings-panel">
-                    <div className="export-settings-title">قوالب جاهزة</div>
-                    <div className="theme-presets">
-                        {PRESETS.map(p => (
-                            <button key={p.label} className="theme-preset-btn" onClick={() => applyPreset(p)}
-                                style={{ borderColor: p.cfg.accentColor, color: p.cfg.accentColor, background: `${p.cfg.accentColor}12` }}>
-                                {p.label}
+    // Helper to render the active target cleanly
+    const renderTarget = () => {
+        if (!previewTarget) return null;
+
+        switch (previewTarget.type) {
+            case 'all-groups':
+                return <AllGroupsTemplate innerRef={targetRef} teams={teams} settings={settings} cfg={cfg} />;
+            case 'single-group':
+                return <GroupExportTemplate innerRef={targetRef} group={previewTarget.group} teams={teams.filter(t => t.group === previewTarget.group)} settings={settings} cfg={cfg} />;
+            case 'upcoming-all':
+                return <UpcomingMatchesTemplate innerRef={targetRef} matches={matches} settings={settings} cfg={cfg} />;
+            case 'match':
+            case 'result':
+            case 'ko-match':
+                const match = matches.find(m => m._id === previewTarget.matchId);
+                return match ? <MatchCardTemplate innerRef={targetRef} match={match} showResult={previewTarget.type === 'result' || previewTarget.type === 'ko-match'} settings={settings} cfg={cfg} /> : null;
+            case 'knockout-all':
+                return <KnockoutExportTemplate innerRef={targetRef} matches={knockout} settings={settings} cfg={cfg} />;
+            default:
+                return null;
+        }
+    };
+
+    // Render Preview Modal Overlay
+    const renderPreviewModal = () => {
+        if (!previewTarget) return null;
+
+        return (
+            <div className="export-preview-modal-overlay">
+                <div className="export-preview-modal">
+                    {/* Header */}
+                    <div className="export-preview-header">
+                        <div className="export-preview-title">
+                            معاينة التصدير
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-success" onClick={doExport} disabled={exporting}>
+                                <Download size={16} />
+                                {exporting ? 'جاري التحميل...' : 'تحميل الصورة'}
                             </button>
-                        ))}
+                            <button className="btn btn-ghost" onClick={closePreview} style={{ padding: '0.4rem', color: 'var(--text-muted)' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="export-settings-panel">
-                    <div className="export-settings-title">الألوان</div>
-                    <ColorRow label="لون الخلفية (من)" value={cfg.bgFrom} onChange={v => set('bgFrom', v)} />
-                    <ColorRow label="لون الخلفية (إلى)" value={cfg.bgTo} onChange={v => set('bgTo', v)} />
-                    <ColorRow label="لون اللكنة" value={cfg.accentColor} onChange={v => set('accentColor', v)} />
-                    <ColorRow label="لون النص الأساسي" value={cfg.textPrimary} onChange={v => set('textPrimary', v)} />
-                    <ColorRow label="لون البطاقة" value={cfg.cardBg} onChange={v => set('cardBg', v)} />
-                    <ColorRow label="لون الحد" value={cfg.cardBorder} onChange={v => set('cardBorder', v)} />
-                </div>
+                    {/* Body (Sidebar + Content) */}
+                    <div className="export-preview-body">
+                        {/* Settings Sidebar */}
+                        <div className="export-preview-sidebar">
+                            {/* Pre-made Presets */}
+                            <div>
+                                <div className="export-settings-title" style={{ marginBottom: '8px' }}>قوالب جاهزة</div>
+                                <div className="theme-presets" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {PRESETS.map(p => (
+                                        <button key={p.label} className="theme-preset-btn" onClick={() => applyPreset(p)}
+                                            style={{ borderColor: p.cfg.accentColor, color: p.cfg.accentColor, background: `${p.cfg.accentColor}12`, flex: '1 1 calc(50% - 6px)', minWidth: '90px', padding: '6px', fontSize: '0.75rem' }}>
+                                            {p.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
-                <div className="export-settings-panel">
-                    <div className="export-settings-title">الخط</div>
-                    <div className="form-group">
-                        <label className="form-label">نوع الخط</label>
-                        <select className="form-select" value={cfg.fontFamily} onChange={e => set('fontFamily', e.target.value)}>
-                            {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
-                    </div>
-                    <div className="form-group" style={{ marginTop: '.4rem' }}>
-                        <label className="form-label">نص العلامة المائية</label>
-                        <input className="form-input" value={cfg.watermarkText} onChange={e => set('watermarkText', e.target.value)} placeholder={settings?.tournamentName || 'اتركه فارغاً للافتراضي'} />
-                    </div>
-                </div>
+                            {/* Colors */}
+                            <div>
+                                <div className="export-settings-title" style={{ marginBottom: '8px' }}>الألوان</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <ColorRow label="لون الخلفية (من)" value={cfg.bgFrom} onChange={v => set('bgFrom', v)} />
+                                    <ColorRow label="لون الخلفية (إلى)" value={cfg.bgTo} onChange={v => set('bgTo', v)} />
+                                    <ColorRow label="لون اللكنة" value={cfg.accentColor} onChange={v => set('accentColor', v)} />
+                                    <ColorRow label="لون النص الأساسي" value={cfg.textPrimary} onChange={v => set('textPrimary', v)} />
+                                    <ColorRow label="لون البطاقة" value={cfg.cardBg} onChange={v => set('cardBg', v)} />
+                                </div>
+                            </div>
 
-                <div className="export-settings-panel">
-                    <div className="export-settings-title">خيارات</div>
-                    <div className="form-group">
-                        <label className="form-label">جودة الصورة</label>
-                        <select className="form-select" value={cfg.scale} onChange={e => set('scale', Number(e.target.value))}>
-                            <option value={1}>عادي (1×)</option>
-                            <option value={2}>مرتفع (2×)</option>
-                            <option value={3}>عالي جداً (3×)</option>
-                        </select>
-                    </div>
-                    <div className="form-group" style={{ marginTop: '.4rem' }}>
-                        <label className="form-label">نمط البطاقة</label>
-                        <select className="form-select" value={cfg.cardStyle} onChange={e => set('cardStyle', e.target.value)}>
-                            <option value="dark">داكن</option>
-                            <option value="flat">مسطح</option>
-                        </select>
-                    </div>
-                    <div style={{ marginTop: '.5rem' }}>
-                        <Toggle label="إظهار التواريخ" checked={cfg.showDates} onChange={v => set('showDates', v)} />
-                        <Toggle label="علامة مائية" checked={cfg.showWatermark} onChange={v => set('showWatermark', v)} />
-                        <Toggle label="شارة التطبيق" checked={cfg.showGroupBadge} onChange={v => set('showGroupBadge', v)} />
+                            {/* Options */}
+                            <div>
+                                <div className="export-settings-title" style={{ marginBottom: '8px' }}>الخط والخيارات</div>
+                                <div className="form-group" style={{ marginBottom: '8px' }}>
+                                    <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '2px' }}>الخط</label>
+                                    <select className="form-select" value={cfg.fontFamily} onChange={e => set('fontFamily', e.target.value)}>
+                                        {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '8px' }}>
+                                    <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '2px' }}>نمط البطاقة</label>
+                                    <select className="form-select" value={cfg.cardStyle} onChange={e => set('cardStyle', e.target.value)}>
+                                        <option value="dark">داكن (Dark)</option>
+                                        <option value="flat">مسطح (Flat)</option>
+                                        <option value="glass">زجاجي (Glass)</option>
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '8px' }}>
+                                    <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '2px' }}>جودة التصدير</label>
+                                    <select className="form-select" value={cfg.scale} onChange={e => set('scale', Number(e.target.value))}>
+                                        <option value={1}>عادية (1x)</option>
+                                        <option value={2}>عالية (2x)</option>
+                                        <option value={3}>فائقة (3x)</option>
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '6px' }}>
+                                    <input className="form-input" value={cfg.watermarkText} onChange={e => set('watermarkText', e.target.value)} placeholder="نص العلامة المائية..." />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                                    <Toggle label="إظهار التواريخ" checked={cfg.showDates} onChange={v => set('showDates', v)} />
+                                    <Toggle label="علامة مائية" checked={cfg.showWatermark} onChange={v => set('showWatermark', v)} />
+                                    <Toggle label="شريط البطولة" checked={cfg.showGroupBadge} onChange={v => set('showGroupBadge', v)} />
+                                </div>
+                                <button className="btn btn-ghost btn-sm" style={{ marginTop: '12px', width: '100%', fontSize: '0.75rem', border: '1px solid var(--border)' }} onClick={() => setCfg({ ...DEFAULT_CFG, textPrimary: settings?.colorTextPrimary || DEFAULT_CFG.textPrimary, accentColor: settings?.primaryColor || DEFAULT_CFG.accentColor })}>
+                                    استعادة الافتراضيات
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Scaled Preview Canvas */}
+                        <div className="export-preview-content" ref={containerRef}>
+                            <div className="export-preview-canvas-wrapper" style={{ transform: `scale(${scale})` }}>
+                                {renderTarget()}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        );
+    };
+
+    return (
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {renderPreviewModal()}
 
             {/* ── Export Buttons Panel ── */}
             <div style={{ flex: 1, minWidth: 220 }}>
@@ -462,9 +575,9 @@ export default function CanvasExporter({ teams, matches, settings }) {
                     <div className="export-section">
                         <div className="export-settings-title">تصدير المجموعات</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-                            <ExportBtn id="exp-all-groups" label="جميع المجموعات (صورة واحدة)" filename={`${tName}-all-groups.png`} />
+                            <ExportBtn type="all-groups" label="جميع المجموعات (صورة واحدة)" filename={`${tName}-all-groups.png`} />
                             {GROUPS.map(g => (
-                                <ExportBtn key={g} id={`exp-group-${g}`} label={`المجموعة ${g}`} filename={`${tName}-group-${g}.png`} />
+                                <ExportBtn key={g} type="single-group" data={{ group: g }} label={`المجموعة ${g}`} filename={`${tName}-group-${g}.png`} />
                             ))}
                         </div>
                     </div>
@@ -474,9 +587,9 @@ export default function CanvasExporter({ teams, matches, settings }) {
                     <div className="export-section">
                         <div className="export-settings-title">المباريات القادمة ({pending.length})</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-                            <ExportBtn id="exp-upcoming-all" label="قائمة كل المباريات القادمة" filename={`${tName}-upcoming.png`} />
+                            <ExportBtn type="upcoming-all" label="قائمة كل المباريات القادمة" filename={`${tName}-upcoming.png`} />
                             {pending.map((m, i) => (
-                                <ExportBtn key={m._id} id={`exp-match-${m._id}`}
+                                <ExportBtn key={m._id} type="match" data={{ matchId: m._id }}
                                     label={`${m.team1?.name}  ضد  ${m.team2?.name}`}
                                     filename={`${tName}-match-${i + 1}.png`} />
                             ))}
@@ -492,7 +605,7 @@ export default function CanvasExporter({ teams, matches, settings }) {
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
                                 {completed.map((m, i) => (
-                                    <ExportBtn key={m._id} id={`exp-result-${m._id}`}
+                                    <ExportBtn key={m._id} type="result" data={{ matchId: m._id }}
                                         label={`${m.team1?.name} ${m.score1} - ${m.score2} ${m.team2?.name}`}
                                         filename={`${tName}-result-${i + 1}.png`} />
                                 ))}
@@ -508,9 +621,9 @@ export default function CanvasExporter({ teams, matches, settings }) {
                             <p style={{ color: 'var(--text-muted)', fontSize: '.82rem' }}>لا توجد مباريات إقصاء بعد</p>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-                                <ExportBtn id="exp-knockout" label="شجرة الإقصاء الكاملة" filename={`${tName}-bracket.png`} />
+                                <ExportBtn type="knockout-all" label="شجرة الإقصاء الكاملة" filename={`${tName}-bracket.png`} />
                                 {knockout.map((m, i) => (
-                                    <ExportBtn key={m._id} id={`exp-ko-${m._id}`}
+                                    <ExportBtn key={m._id} type="ko-match" data={{ matchId: m._id }}
                                         label={`${m.knockoutRound}: ${m.team1?.name} ضد ${m.team2?.name}`}
                                         filename={`${tName}-ko-${i + 1}.png`} />
                                 ))}
@@ -519,23 +632,6 @@ export default function CanvasExporter({ teams, matches, settings }) {
                     </div>
                 )}
             </div>
-
-            {/* ── OFF-SCREEN RENDER TARGETS ── */}
-            <AllGroupsTemplate id="exp-all-groups" teams={teams} settings={settings} cfg={cfg} />
-            {GROUPS.map(g => (
-                <GroupExportTemplate key={g} id={`exp-group-${g}`} group={g} teams={teams.filter(t => t.group === g)} settings={settings} cfg={cfg} />
-            ))}
-            <UpcomingMatchesTemplate id="exp-upcoming-all" matches={matches} settings={settings} cfg={cfg} />
-            {pending.map(m => (
-                <MatchCardTemplate key={m._id} id={`exp-match-${m._id}`} match={m} showResult={false} settings={settings} cfg={cfg} />
-            ))}
-            {completed.map(m => (
-                <MatchCardTemplate key={m._id} id={`exp-result-${m._id}`} match={m} showResult={true} settings={settings} cfg={cfg} />
-            ))}
-            <KnockoutExportTemplate id="exp-knockout" matches={knockout} settings={settings} cfg={cfg} />
-            {knockout.map(m => (
-                <MatchCardTemplate key={m._id} id={`exp-ko-${m._id}`} match={m} showResult={m.status === 'Completed'} settings={settings} cfg={cfg} />
-            ))}
         </div>
     );
 }
