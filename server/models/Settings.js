@@ -35,6 +35,8 @@ const settingsSchema = new mongoose.Schema({
     logoFont: { type: String, default: 'Lalezar' },
     bodyFont: { type: String, default: 'Tajawal' },
 
+    // ── Analytics ──
+    visitorsCount: { type: Number, default: 0 },
 });
 
 settingsSchema.statics.getSettings = async function () {

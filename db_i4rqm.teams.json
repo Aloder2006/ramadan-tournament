@@ -1,0 +1,352 @@
+[{
+  "_id": {
+    "$oid": "6997b0c0e89cd8030778d96e"
+  },
+  "name": "الشهداء",
+  "group": "أ",
+  "played": 2,
+  "won": 2,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 4,
+  "ga": 2,
+  "gd": 2,
+  "points": 6,
+  "createdAt": {
+    "$date": "2026-02-20T00:54:24.089Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-23T15:41:33.405Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6997b0cde89cd8030778d972"
+  },
+  "name": "انبي",
+  "group": "أ",
+  "played": 1,
+  "won": 0,
+  "drawn": 0,
+  "lost": 1,
+  "gf": 1,
+  "ga": 2,
+  "gd": -1,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-20T00:54:37.006Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-20T12:49:38.388Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6997b114e89cd8030778d986"
+  },
+  "name": "نسور شبرا",
+  "group": "ب",
+  "played": 2,
+  "won": 0,
+  "drawn": 0,
+  "lost": 2,
+  "gf": 5,
+  "ga": 11,
+  "gd": -6,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-20T00:55:48.812Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T15:43:43.294Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6997b12de89cd8030778d992"
+  },
+  "name": "الشهيد وائل المنجي",
+  "group": "ب",
+  "played": 1,
+  "won": 1,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 7,
+  "ga": 4,
+  "gd": 3,
+  "points": 3,
+  "createdAt": {
+    "$date": "2026-02-20T00:56:13.669Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-20T12:49:47.992Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6997b147e89cd8030778d99e"
+  },
+  "name": "أولاد البلد",
+  "group": "ج",
+  "played": 1,
+  "won": 0,
+  "drawn": 0,
+  "lost": 1,
+  "gf": 1,
+  "ga": 4,
+  "gd": -3,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-20T00:56:39.823Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:16:24.703Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6997b14de89cd8030778d9a2"
+  },
+  "name": "البهو",
+  "group": "ج",
+  "played": 1,
+  "won": 1,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 4,
+  "ga": 1,
+  "gd": 3,
+  "points": 3,
+  "createdAt": {
+    "$date": "2026-02-20T00:56:45.874Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:16:20.027Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69986125af2dc68028c97321"
+  },
+  "name": "سلكا",
+  "group": "ج",
+  "played": 1,
+  "won": 1,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 11,
+  "ga": 2,
+  "gd": 9,
+  "points": 3,
+  "createdAt": {
+    "$date": "2026-02-20T13:27:01.020Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:47:26.969Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6998612faf2dc68028c97327"
+  },
+  "name": "المالحه",
+  "group": "ج",
+  "played": 1,
+  "won": 0,
+  "drawn": 0,
+  "lost": 1,
+  "gf": 2,
+  "ga": 11,
+  "gd": -9,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-20T13:27:11.053Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:47:26.970Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6998f83c7c4d9176a572ce49"
+  },
+  "name": "جميزة بلجاي",
+  "group": "أ",
+  "played": 1,
+  "won": 0,
+  "drawn": 0,
+  "lost": 1,
+  "gf": 1,
+  "ga": 2,
+  "gd": -1,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-21T00:11:40.641Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-23T15:41:33.405Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699a07e68003cdfd45f385f6"
+  },
+  "name": "الحريفة",
+  "group": "ب",
+  "played": 1,
+  "won": 1,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 4,
+  "ga": 1,
+  "gd": 3,
+  "points": 3,
+  "createdAt": {
+    "$date": "2026-02-21T19:30:46.637Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T15:43:43.294Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699b8e71132208b07f86dd69"
+  },
+  "name": "منشأة الاخوه",
+  "group": "د",
+  "played": 0,
+  "won": 0,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 0,
+  "ga": 0,
+  "gd": 0,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-22T23:17:05.537Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:17:05.537Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699b8e7b0c7f77cc38b4a6bb"
+  },
+  "name": "شبراهور",
+  "group": "د",
+  "played": 0,
+  "won": 0,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 0,
+  "ga": 0,
+  "gd": 0,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-22T23:17:15.539Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:17:15.539Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699b8e820c7f77cc38b4a6c8"
+  },
+  "name": "شنشا",
+  "group": "د",
+  "played": 0,
+  "won": 0,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 0,
+  "ga": 0,
+  "gd": 0,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-22T23:17:22.830Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:17:22.830Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699b8e8b0c7f77cc38b4a6d5"
+  },
+  "name": "ميت ابو الحسين",
+  "group": "د",
+  "played": 0,
+  "won": 0,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 0,
+  "ga": 0,
+  "gd": 0,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-22T23:17:31.836Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-22T23:17:31.836Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699cde07285f5559807f911d"
+  },
+  "name": "بحقيره",
+  "group": "ب",
+  "played": 0,
+  "won": 0,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 0,
+  "ga": 0,
+  "gd": 0,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-23T23:08:55.729Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-23T23:08:55.729Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "699cde11bcf960472e908169"
+  },
+  "name": "شنفاس",
+  "group": "أ",
+  "played": 0,
+  "won": 0,
+  "drawn": 0,
+  "lost": 0,
+  "gf": 0,
+  "ga": 0,
+  "gd": 0,
+  "points": 0,
+  "createdAt": {
+    "$date": "2026-02-23T23:09:05.491Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-23T23:09:05.491Z"
+  },
+  "__v": 0
+}]

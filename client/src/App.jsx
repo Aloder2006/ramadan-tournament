@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
 import AdminLogin from './pages/AdminLogin';
+import { recordVisit } from './services/api';
 
 function ProtectedAdminRoute() {
   const [authenticated, setAuthenticated] = useState(
@@ -15,6 +16,25 @@ function ProtectedAdminRoute() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const checkVisit = async () => {
+      const lastVisitTime = localStorage.getItem('lastVisitTime');
+      const ONE_HOUR = 60 * 60 * 1000;
+      const now = Date.now();
+
+      if (!lastVisitTime || now - parseInt(lastVisitTime, 10) > ONE_HOUR) {
+        try {
+          await recordVisit();
+          localStorage.setItem('lastVisitTime', now.toString());
+        } catch (error) {
+          console.error("Error logging visit:", error);
+        }
+      }
+    };
+
+    checkVisit();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

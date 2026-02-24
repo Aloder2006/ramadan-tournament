@@ -49,6 +49,9 @@ export const setTournamentName = (name) =>
 export const updateSettings = (data) =>
     fetch('/api/settings/info', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
 
+export const recordVisit = () =>
+    fetch('/api/settings/visit', { method: 'POST' }).then(r => r.json());
+
 // --- Reset ---
 export const resetGroups = () => fetch('/api/settings/reset/groups', { method: 'DELETE' }).then(r => r.json());
 export const resetKnockout = () => fetch('/api/settings/reset/knockout', { method: 'DELETE' }).then(r => r.json());

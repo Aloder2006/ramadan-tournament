@@ -418,6 +418,9 @@ export default function AdminPage({ onLogout }) {
                         <p className="admin-subtitle">{settings?.phase === 'knockout' ? 'مرحلة الإقصاء' : 'دور المجموعات'} · {settings?.tournamentName || config.name}</p>
                     </div>
                     <div className="admin-header-actions">
+                        <div className="btn btn-ghost btn-sm" style={{ pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+                            👁️ الزيارات: <strong style={{ color: 'var(--text-primary)', marginRight: '0.35rem' }}>{settings?.visitorsCount || 0}</strong>
+                        </div>
                         <a href="/" className="btn btn-ghost btn-sm">الرئيسية</a>
                         <button className="btn btn-danger btn-sm" onClick={onLogout}>خروج</button>
                     </div>

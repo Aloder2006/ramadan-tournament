@@ -305,6 +305,15 @@ router.put('/info', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
+// POST /api/settings/visit — increment the absolute visitors counter
+router.post('/visit', async (req, res) => {
+    try {
+        const settings = await Settings.getSettings();
+        settings.visitorsCount = (settings.visitorsCount || 0) + 1;
+        await settings.save();
+        res.json({ visitorsCount: settings.visitorsCount });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
 
 // ════════════════════════════════════════════════════
 // RESET ROUTES
