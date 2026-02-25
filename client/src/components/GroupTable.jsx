@@ -113,9 +113,9 @@ export default function GroupTable({ group, teams }) {
                                         {/* GD */}
                                         <td style={{
                                             ...TD(),
-                                            fontWeight: 600,
+                                            
                                             direction: 'ltr', // للحفاظ على علامة السالب/الموجب في مكانها الصحيح
-                                            color: team.gd > 0 ? 'var(--success)' : team.gd < 0 ? 'var(--danger)' : 'var(--text-muted)',
+                                            
                                         }}>
                                             {team.gd > 0 ? `+${team.gd}` : team.gd}
                                         </td>
@@ -125,7 +125,7 @@ export default function GroupTable({ group, teams }) {
                                             ...TD(),
                                             fontWeight: 900, 
                                             fontSize: 'clamp(0.85rem, 2.5vw, .95rem)',
-                                            color: qualified ? 'var(--gold)' : 'var(--text-primary)',
+                                            color: 'var(--text-primary)',
                                         }}>
                                             {team.points}
                                         </td>
