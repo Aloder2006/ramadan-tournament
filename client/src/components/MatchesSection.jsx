@@ -26,6 +26,9 @@ function MatchCard({ m }) {
             gap: '0.6rem',
             boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
             cursor: 'pointer',
+            // إخفاء الهايلايت الأزرق عند النقر
+            WebkitTapHighlightColor: 'transparent',
+            outline: 'none',
         }}>
             <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
                 <span style={{
@@ -37,9 +40,8 @@ function MatchCard({ m }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                {badge && (
-                    <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'var(--gold)' }}>{badge}</span>
-                )}
+                {badge && <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'var(--gold)' }}>{badge}</span>}
+                
                 <div style={{
                     background: 'var(--bg-base)', padding: '4px 10px', borderRadius: '6px',
                     border: '1px solid var(--border)', minWidth: '70px', textAlign: 'center'
@@ -78,7 +80,11 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     
     const [tab, setTab] = useState(safeToday.length > 0 ? 'today' : 'tomorrow');
     const [showHint, setShowHint] = useState(false);
-    const scrollRef = useRef(null);
+    
+    // ريفرنس لعمل التمرير بدون أخطاء حسابية
+    const scrollContainerRef = useRef(null);
+    const todayPanelRef = useRef(null);
+    const tomorrowPanelRef = useRef(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -96,25 +102,41 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         }
     };
 
-    const handleScroll = () => {
+    // ميكانزم التمرير المحدث لحل أخطاء الـ RTL
+    const handleScroll = (e) => {
         dismissHint();
-        if (!scrollRef.current) return;
-        const scrollLeft = Math.abs(scrollRef.current.scrollLeft);
-        const width = scrollRef.current.offsetWidth;
-        if (scrollLeft < width / 2) setTab('today');
-        else setTab('tomorrow');
+        const container = e.target;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        
+        // منع القسمة على صفر إذا لم يكن هناك مساحة للتمرير
+        if (maxScroll <= 0) return; 
+
+        // نسبة التمرير من 0 إلى 1 (لحل اختلاف المتصفحات في الإشارات السالبة والموجبة)
+        const scrollRatio = Math.abs(container.scrollLeft) / maxScroll;
+
+        // تحديث التبويب النشط بسلاسة بدون ارتباك
+        if (scrollRatio < 0.3 && tab !== 'today') setTab('today');
+        else if (scrollRatio > 0.7 && tab !== 'tomorrow') setTab('tomorrow');
     };
 
+    // دالة الأزرار المحدثة (تستخدم ScrollIntoView كحل نهائي ومستقر)
     const scrollToTab = (t) => {
         dismissHint();
-        if (!scrollRef.current) return;
-        const width = scrollRef.current.offsetWidth;
-        scrollRef.current.scrollTo({ left: t === 'today' ? 0 : -width, behavior: 'smooth' });
         setTab(t);
+        
+        const targetPanel = t === 'today' ? todayPanelRef.current : tomorrowPanelRef.current;
+        if (targetPanel) {
+            targetPanel.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest', 
+                inline: 'start' 
+            });
+        }
     };
 
     return (
         <section style={{ background: 'var(--bg-base)', padding: '1rem 0 1.5rem', position: 'relative' }}>
+            {/* Header & Tabs */}
             <div style={{ padding: '0 1rem 0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
                 <h3 style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)' }}>
                     مباريات الجولة
@@ -122,13 +144,15 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 
                 <div style={{
                     display: 'flex', background: 'var(--bg-elevated)', borderRadius: '100px',
-                    padding: '4px', border: '1px solid var(--border)', width: '100%', maxWidth: '260px', position: 'relative'
+                    padding: '4px', border: '1px solid var(--border)', width: '100%', maxWidth: '260px', position: 'relative',
+                    // منع تحديد المربع عند لمس الحاوية بالكامل
+                    WebkitTapHighlightColor: 'transparent',
                 }}>
                     <div style={{
                         position: 'absolute', width: 'calc(50% - 4px)', top: '4px', bottom: '4px',
                         right: tab === 'today' ? '4px' : 'calc(50%)',
                         background: 'var(--bg-card)', borderRadius: '100px', 
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.08)', transition: 'right 0.3s'
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.08)', transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
 
                     <button onClick={() => scrollToTab('today')} style={tabBtn(tab === 'today')}>
@@ -140,19 +164,31 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 </div>
             </div>
 
+            {/* Scroll Container */}
             <div style={{ position: 'relative', paddingBottom: '1rem' }}>
-                <div ref={scrollRef} onScroll={handleScroll} style={{
-                    display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory',
-                    WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', direction: 'rtl'
-                }}>
-                    <div style={panelStyle}>
+                <div 
+                    ref={scrollContainerRef} 
+                    onScroll={handleScroll} 
+                    style={{
+                        display: 'flex', 
+                        overflowX: 'auto', 
+                        scrollSnapType: 'x mandatory',
+                        WebkitOverflowScrolling: 'touch', 
+                        scrollbarWidth: 'none', 
+                        direction: 'rtl',
+                        overscrollBehaviorX: 'contain' // يمنع إغلاق الصفحة عند التمرير الجانبي القوي
+                    }}
+                >
+                    {/* Today Panel */}
+                    <div ref={todayPanelRef} style={panelStyle}>
                         <div style={listWrapper}>
                             {safeToday.length === 0 ? <EmptyState text="لا توجد مباريات اليوم" /> :
                             safeToday.map(m => <MatchCard key={m._id} m={m} />)}
                         </div>
                     </div>
 
-                    <div style={panelStyle}>
+                    {/* Tomorrow Panel */}
+                    <div ref={tomorrowPanelRef} style={panelStyle}>
                         <div style={listWrapper}>
                             {safeTomorrow.length === 0 ? <EmptyState text="لا توجد مباريات غداً" /> :
                             safeTomorrow.map(m => <MatchCard key={m._id} m={m} />)}
@@ -160,24 +196,13 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                     </div>
                 </div>
 
-                {/* التلميح العائم أسفل الصندوق */}
+                {/* Hint Float */}
                 {showHint && (
                     <div style={{
-                        position: 'absolute', 
-                        bottom: '-10px', // يجعله يطفو تحت القائمة
-                        left: '50%', 
-                        transform: 'translateX(-50%)',
-                        zIndex: 10, 
-                        pointerEvents: 'none', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '6px',
-                        background: 'var(--bg-card)', // لون خلفية هادئ
-                        color: 'var(--text-primary)', 
-                        padding: '4px 16px', 
-                        borderRadius: '20px',
-                        border: '1px solid var(--border)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
+                        zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '6px',
+                        background: 'var(--bg-card)', color: 'var(--text-primary)', padding: '4px 16px', 
+                        borderRadius: '20px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                     }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>مرر للمزيد</span>
                         <span className="swipe-animated-arrow" style={{ color: 'var(--gold)', fontSize: '0.9rem' }}>←</span>
@@ -185,7 +210,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 )}
             </div>
 
-            {/* أنيميشن السهم */}
+            {/* Animation */}
             <style>{`
                 @keyframes swipeBounce {
                     0%, 100% { transform: translateX(0); }
@@ -207,7 +232,11 @@ const tabBtn = (active) => ({
     flex: 1, padding: '6px 0', border: 'none', background: 'transparent',
     color: active ? 'var(--gold)' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800,
     cursor: 'pointer', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', 
-    justifyContent: 'center', gap: '6px', outline: 'none'
+    justifyContent: 'center', gap: '6px', 
+    // التعديلات الأساسية للأزرار هنا
+    outline: 'none',
+    WebkitTapHighlightColor: 'transparent', 
+    userSelect: 'none'
 });
 
 const countBadge = (active) => ({
@@ -215,20 +244,14 @@ const countBadge = (active) => ({
     color: active ? 'var(--gold)' : 'var(--text-muted)', padding: '1px 6px', borderRadius: '10px', fontWeight: 900
 });
 
-const panelStyle = { width: '100%', flexShrink: 0, scrollSnapAlign: 'center' };
+const panelStyle = { width: '100%', flexShrink: 0, scrollSnapAlign: 'start' }; // start أفضل للـ scrollIntoView
 const listWrapper = { display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 1rem', maxWidth: '550px', margin: '0 auto' };
 
-// تم تصغير صندوق Empty State هنا
 const EmptyState = ({ text }) => (
     <div style={{ 
-        padding: '1.25rem 1rem', // تصغير المساحة العلوية والسفلية
-        textAlign: 'center', 
-        color: 'var(--text-muted)', 
-        fontSize: '0.8rem', 
-        fontWeight: 700, 
-        background: 'var(--bg-card)', 
-        borderRadius: '12px', 
-        border: '1px dashed var(--border)' 
+        padding: '1.25rem 1rem', textAlign: 'center', color: 'var(--text-muted)', 
+        fontSize: '0.8rem', fontWeight: 700, background: 'var(--bg-card)', 
+        borderRadius: '12px', border: '1px dashed var(--border)' 
     }}>
         {text}
     </div>
