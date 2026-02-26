@@ -2857,3 +2857,14 @@ img {
   max-width: 100%;
   max-height: 100%;
 }
+
+
+/* أضف هذا في ملف الـ CSS العام لديك */
+@keyframes swipeBounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-6px); }
+}
+.swipe-animated-arrow {
+    display: inline-block;
+    animation: swipeBounce 1.5s infinite;
+}
