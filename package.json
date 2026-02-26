@@ -6,7 +6,10 @@
         "install-all": "npm install --prefix client",
         "postinstall": "npm run install-all",
         "build": "npm run install-all && npm run build --prefix client",
-        "start": "node server/server.js"
+        "start": "node server/server.js",
+        "server": "nodemon server/server.js",
+        "client": "npm run dev --prefix client",
+        "dev": "concurrently \"npm run server\" \"npm run client\""
     },
     "dependencies": {
         "cors": "^2.8.5",
@@ -16,5 +19,9 @@
     },
     "engines": {
         "node": ">=18.0.0"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1",
+        "nodemon": "^3.1.14"
     }
 }
