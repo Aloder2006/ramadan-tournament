@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 /* ──────────────────────────────────────────
-   MATCH CARD (لم يتغير)
+   MATCH CARD
 ────────────────────────────────────────── */
 function MatchCard({ m }) {
     const done = m.status === 'Completed';
@@ -85,19 +85,16 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     const todayPanelRef = useRef(null);
     const tomorrowPanelRef = useRef(null);
 
-    // معالجة التنبيه
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const hasSwiped = localStorage.getItem('hasSwipedMatches');
             if (!hasSwiped && safeTomorrow.length > 0 && safeToday.length > 0) {
-                // تأخير طفيف ليظهر بعد تحميل المحتوى
                 const timer = setTimeout(() => setShowHint(true), 1000); 
                 return () => clearTimeout(timer);
             }
         }
     }, [safeToday.length, safeTomorrow.length]);
 
-    // مزامنة موضع التمرير الأولي
     useEffect(() => {
         if (initialTab === 'tomorrow' && tomorrowPanelRef.current) {
             setTimeout(() => {
@@ -113,7 +110,6 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         }
     };
 
-    // ميكانزم التمرير لتحديث التبويب النشط
     const handleScroll = () => {
         if (!scrollContainerRef.current || !todayPanelRef.current || !tomorrowPanelRef.current) return;
         
@@ -211,51 +207,56 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                     </div>
                 </div>
 
-                {/* Hint Float - تم تحديثه بأنيميشن التمرير الكامل */}
+                {/* الأنيميشن الجديد: تغطية مساحة التمرير بحركة محاكاة اليد */}
                 {showHint && (
-                    <div 
-                        className="scroll-hint-container" // إضافة كلاس للأنيميشن
-                        style={{
-                            position: 'absolute', bottom: '-10px', left: '50%',
-                            // إزالة transform من هنا لأن الأنيميشن سيتولى أمره
-                            zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '6px',
-                            background: 'var(--bg-card)', color: 'var(--text-primary)', padding: '5px 18px', 
-                            borderRadius: '20px', border: '1px solid var(--border)', boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
-                        }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>مرر للمزيد</span>
-                        <span style={{ color: 'var(--gold)', fontSize: '0.9rem' }}>←</span>
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: '1rem',
+                        zIndex: 20, pointerEvents: 'none', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        // خلفية متدرجة خفيفة جداً تبرز الأنيميشن بدون إخفاء المحتوى بالكامل
+                        background: 'radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, transparent 80%)',
+                    }}>
+                        <div className="hand-swipe-anim" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ 
+                                fontSize: '3rem', 
+                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' 
+                            }}>👆</span>
+                            <span style={{ 
+                                color: '#ffffff', fontSize: '1.1rem', fontWeight: 900, 
+                                textShadow: '0 2px 6px rgba(0,0,0,0.8)', fontFamily: 'Cairo, sans-serif' 
+                            }}>اسحب للمزيد</span>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* الأنيميشن الجديد */}
+            {/* CSS الأنيميشن الخاص بحركة اليد على الشاشة */}
             <style>{`
-                /* أنيميشن يحاكي حركة التمرير الجانبي للحاوية بالكامل */
-                @keyframes hintScrollSlide {
+                @keyframes onScreenSwipe {
                     0% { 
-                        transform: translateX(-50%) translateX(15px); /* نبدأ مزاحة لليمين قليلاً (RTL) */
-                        opacity: 0;
+                        opacity: 0; 
+                        transform: translateX(-40px) scale(0.9); 
                     }
                     15% {
-                        opacity: 1; /* ظهور سريع */
+                        opacity: 1; 
+                        transform: translateX(-40px) scale(1);
                     }
-                    50% { 
-                        transform: translateX(-50%) translateX(-20px); /* سحب لليسار */
+                    70% { 
+                        opacity: 1; 
+                        transform: translateX(40px) scale(1); 
                     }
                     85% {
-                        opacity: 1; /* بقاء الظهور */
+                        opacity: 0; 
+                        transform: translateX(40px) scale(0.9);
                     }
                     100% { 
-                        transform: translateX(-50%) translateX(15px); /* العودة والاختفاء */
-                        opacity: 0;
+                        opacity: 0; 
+                        transform: translateX(-40px) scale(0.9);
                     }
                 }
 
-                .scroll-hint-container {
-                    /* تطبيق الأنيميشن: مدة 2.5 ثانية، تكرار نهائي، حركة ناعمة */
-                    animation: hintScrollSlide 2.5s infinite ease-in-out;
-                    /* نضمن الحفاظ على التوسيط الأساسيtranslateX(-50%) */
-                    transform-origin: center center; 
+                .hand-swipe-anim {
+                    animation: onScreenSwipe 2.2s infinite ease-in-out;
                 }
             `}</style>
         </section>
@@ -263,7 +264,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
 }
 
 /* ──────────────────────────────────────────
-   Styles (لم تتغير)
+   Styles
 ────────────────────────────────────────── */
 const tabBtn = (active) => ({
     flex: 1, padding: '6px 0', border: 'none', background: 'transparent',
