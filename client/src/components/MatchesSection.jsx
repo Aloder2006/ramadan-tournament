@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 /* ──────────────────────────────────────────
-   MATCH CARD
+   MATCH CARD (لم يتغير)
 ────────────────────────────────────────── */
 function MatchCard({ m }) {
     const done = m.status === 'Completed';
@@ -77,7 +77,6 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     const safeToday = Array.isArray(todayMatches) ? todayMatches : [];
     const safeTomorrow = Array.isArray(tomorrowMatches) ? tomorrowMatches : [];
     
-    // تحديد التبويب الافتراضي بدقة
     const initialTab = safeToday.length > 0 ? 'today' : (safeTomorrow.length > 0 ? 'tomorrow' : 'today');
     const [tab, setTab] = useState(initialTab);
     const [showHint, setShowHint] = useState(false);
@@ -86,18 +85,19 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     const todayPanelRef = useRef(null);
     const tomorrowPanelRef = useRef(null);
 
-    // معالجة التنبيه وتأخيره قليلاً لمنع إخفائه التلقائي بسبب الـ Layout Shift
+    // معالجة التنبيه
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const hasSwiped = localStorage.getItem('hasSwipedMatches');
             if (!hasSwiped && safeTomorrow.length > 0 && safeToday.length > 0) {
-                const timer = setTimeout(() => setShowHint(true), 600);
+                // تأخير طفيف ليظهر بعد تحميل المحتوى
+                const timer = setTimeout(() => setShowHint(true), 1000); 
                 return () => clearTimeout(timer);
             }
         }
     }, [safeToday.length, safeTomorrow.length]);
 
-    // مزامنة موضع التمرير الأولي إذا كان التبويب الافتراضي هو "الغد"
+    // مزامنة موضع التمرير الأولي
     useEffect(() => {
         if (initialTab === 'tomorrow' && tomorrowPanelRef.current) {
             setTimeout(() => {
@@ -113,7 +113,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         }
     };
 
-    // ميكانزم حديث ومتوافق مع جميع المتصفحات للـ RTL (يعتمد على الأبعاد البصرية)
+    // ميكانزم التمرير لتحديث التبويب النشط
     const handleScroll = () => {
         if (!scrollContainerRef.current || !todayPanelRef.current || !tomorrowPanelRef.current) return;
         
@@ -127,7 +127,6 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         const todayDist = Math.abs(todayRect.left + (todayRect.width / 2) - containerCenter);
         const tomorrowDist = Math.abs(tomorrowRect.left + (tomorrowRect.width / 2) - containerCenter);
         
-        // القسم الأقرب لمنتصف الحاوية هو القسم النشط
         const activeTab = todayDist < tomorrowDist ? 'today' : 'tomorrow';
         
         if (tab !== activeTab) {
@@ -141,7 +140,6 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         
         const targetPanel = t === 'today' ? todayPanelRef.current : tomorrowPanelRef.current;
         if (targetPanel) {
-            // استخدام center يحل أخطاء الـ RTL في جميع المتصفحات
             targetPanel.scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'nearest', 
@@ -184,8 +182,8 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 <div 
                     ref={scrollContainerRef} 
                     onScroll={handleScroll} 
-                    onTouchStart={dismissHint} // إخفاء التنبيه عند اللمس الفعلي
-                    onMouseDown={dismissHint}  // إخفاء التنبيه عند النقر الفعلي بالمؤشر
+                    onTouchStart={dismissHint} 
+                    onMouseDown={dismissHint}
                     style={{
                         display: 'flex', 
                         overflowX: 'auto', 
@@ -213,28 +211,51 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                     </div>
                 </div>
 
-                {/* Hint Float */}
+                {/* Hint Float - تم تحديثه بأنيميشن التمرير الكامل */}
                 {showHint && (
-                    <div style={{
-                        position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
-                        zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '6px',
-                        background: 'var(--bg-card)', color: 'var(--text-primary)', padding: '4px 16px', 
-                        borderRadius: '20px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    }}>
+                    <div 
+                        className="scroll-hint-container" // إضافة كلاس للأنيميشن
+                        style={{
+                            position: 'absolute', bottom: '-10px', left: '50%',
+                            // إزالة transform من هنا لأن الأنيميشن سيتولى أمره
+                            zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '6px',
+                            background: 'var(--bg-card)', color: 'var(--text-primary)', padding: '5px 18px', 
+                            borderRadius: '20px', border: '1px solid var(--border)', boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+                        }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>مرر للمزيد</span>
-                        <span className="swipe-animated-arrow" style={{ color: 'var(--gold)', fontSize: '0.9rem' }}>←</span>
+                        <span style={{ color: 'var(--gold)', fontSize: '0.9rem' }}>←</span>
                     </div>
                 )}
             </div>
 
+            {/* الأنيميشن الجديد */}
             <style>{`
-                @keyframes swipeBounce {
-                    0%, 100% { transform: translateX(0); }
-                    50% { transform: translateX(-4px); }
+                /* أنيميشن يحاكي حركة التمرير الجانبي للحاوية بالكامل */
+                @keyframes hintScrollSlide {
+                    0% { 
+                        transform: translateX(-50%) translateX(15px); /* نبدأ مزاحة لليمين قليلاً (RTL) */
+                        opacity: 0;
+                    }
+                    15% {
+                        opacity: 1; /* ظهور سريع */
+                    }
+                    50% { 
+                        transform: translateX(-50%) translateX(-20px); /* سحب لليسار */
+                    }
+                    85% {
+                        opacity: 1; /* بقاء الظهور */
+                    }
+                    100% { 
+                        transform: translateX(-50%) translateX(15px); /* العودة والاختفاء */
+                        opacity: 0;
+                    }
                 }
-                .swipe-animated-arrow {
-                    display: inline-block;
-                    animation: swipeBounce 1.5s infinite;
+
+                .scroll-hint-container {
+                    /* تطبيق الأنيميشن: مدة 2.5 ثانية، تكرار نهائي، حركة ناعمة */
+                    animation: hintScrollSlide 2.5s infinite ease-in-out;
+                    /* نضمن الحفاظ على التوسيط الأساسيtranslateX(-50%) */
+                    transform-origin: center center; 
                 }
             `}</style>
         </section>
@@ -242,7 +263,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
 }
 
 /* ──────────────────────────────────────────
-   Styles
+   Styles (لم تتغير)
 ────────────────────────────────────────── */
 const tabBtn = (active) => ({
     flex: 1, padding: '6px 0', border: 'none', background: 'transparent',
@@ -259,7 +280,6 @@ const countBadge = (active) => ({
     color: active ? 'var(--gold)' : 'var(--text-muted)', padding: '1px 6px', borderRadius: '10px', fontWeight: 900
 });
 
-// تغيير scrollSnapAlign إلى center لمزيد من التوافقية مع الـ RTL
 const panelStyle = { width: '100%', flexShrink: 0, scrollSnapAlign: 'center' }; 
 const listWrapper = { display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 1rem', maxWidth: '550px', margin: '0 auto' };
 
