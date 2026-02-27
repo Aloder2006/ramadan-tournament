@@ -207,56 +207,62 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                     </div>
                 </div>
 
-                {/* الأنيميشن الجديد: تغطية مساحة التمرير بحركة محاكاة اليد */}
+                {/* مؤشر التمرير الصامت (بدون نصوص أو إيموجي) */}
                 {showHint && (
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: '1rem',
                         zIndex: 20, pointerEvents: 'none', 
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        // خلفية متدرجة خفيفة جداً تبرز الأنيميشن بدون إخفاء المحتوى بالكامل
-                        background: 'radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, transparent 80%)',
+                        background: 'radial-gradient(circle at center, rgba(0,0,0,0.25) 0%, transparent 70%)',
                     }}>
-                        <div className="hand-swipe-anim" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ 
-                                fontSize: '3rem', 
-                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' 
-                            }}>👆</span>
-                            <span style={{ 
-                                color: '#ffffff', fontSize: '1.1rem', fontWeight: 900, 
-                                textShadow: '0 2px 6px rgba(0,0,0,0.8)', fontFamily: 'Cairo, sans-serif' 
-                            }}>اسحب للمزيد</span>
+                        <div className="gesture-track">
+                            <div className="gesture-dot"></div>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* CSS الأنيميشن الخاص بحركة اليد على الشاشة */}
+            {/* CSS الأنيميشن الجديد لمسار الحركة */}
             <style>{`
-                @keyframes onScreenSwipe {
-                    0% { 
-                        opacity: 0; 
-                        transform: translateX(-40px) scale(0.9); 
-                    }
-                    15% {
-                        opacity: 1; 
-                        transform: translateX(-40px) scale(1);
-                    }
-                    70% { 
-                        opacity: 1; 
-                        transform: translateX(40px) scale(1); 
-                    }
-                    85% {
-                        opacity: 0; 
-                        transform: translateX(40px) scale(0.9);
-                    }
-                    100% { 
-                        opacity: 0; 
-                        transform: translateX(-40px) scale(0.9);
-                    }
+                .gesture-track {
+                    width: 70px;
+                    height: 6px;
+                    background: rgba(255, 255, 255, 0.15);
+                    border-radius: 10px;
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+                    backdrop-filter: blur(2px);
                 }
 
-                .hand-swipe-anim {
-                    animation: onScreenSwipe 2.2s infinite ease-in-out;
+                .gesture-dot {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 30px;
+                    height: 100%;
+                    background: var(--gold, #FFD700); /* يفضل أن يكون بلون مميز في ثيمك مثل الذهبي */
+                    border-radius: 10px;
+                    box-shadow: 0 0 8px var(--gold, #FFD700);
+                    animation: wordlessSwipeGesture 2s infinite ease-in-out;
+                }
+
+                @keyframes wordlessSwipeGesture {
+                    0% {
+                        transform: translateX(35px); /* يبدأ من خارج المسار قليلاً */
+                        opacity: 0;
+                    }
+                    15% {
+                        opacity: 1;
+                    }
+                    75% {
+                        transform: translateX(-40px); /* يتحرك للجهة الأخرى محاكياً السحب */
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateX(-45px);
+                        opacity: 0;
+                    }
                 }
             `}</style>
         </section>
