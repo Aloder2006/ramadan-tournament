@@ -79,6 +79,8 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     
     const initialTab = safeToday.length > 0 ? 'today' : (safeTomorrow.length > 0 ? 'tomorrow' : 'today');
     const [tab, setTab] = useState(initialTab);
+    
+    // للتحكم في الأنيميشن الخاص بالصندوق
     const [showHint, setShowHint] = useState(false);
     
     const scrollContainerRef = useRef(null);
@@ -89,7 +91,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         if (typeof window !== 'undefined') {
             const hasSwiped = localStorage.getItem('hasSwipedMatches');
             if (!hasSwiped && safeTomorrow.length > 0 && safeToday.length > 0) {
-                const timer = setTimeout(() => setShowHint(true), 1000); 
+                const timer = setTimeout(() => setShowHint(true), 1200); 
                 return () => clearTimeout(timer);
             }
         }
@@ -111,6 +113,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     };
 
     const handleScroll = () => {
+        dismissHint(); // إيقاف الأنيميشن فوراً إذا مرر المستخدم الشاشة
         if (!scrollContainerRef.current || !todayPanelRef.current || !tomorrowPanelRef.current) return;
         
         const container = scrollContainerRef.current;
@@ -173,10 +176,13 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 </div>
             </div>
 
-            {/* Scroll Container */}
-            <div style={{ position: 'relative', paddingBottom: '1rem' }}>
+            {/* تم إضافة overflow: hidden للحاوية الخارجية لمنع ظهور شريط تمرير بالصفحة أثناء حركة الأنيميشن، 
+               مع الحفاظ على مسافة للـ Shadows 
+            */}
+            <div style={{ position: 'relative', overflowX: 'hidden', paddingBottom: '1rem' }}>
                 <div 
                     ref={scrollContainerRef} 
+                    className={showHint ? 'peek-scroll-anim' : ''} // تطبيق كلاس الأنيميشن هنا
                     onScroll={handleScroll} 
                     onTouchStart={dismissHint} 
                     onMouseDown={dismissHint}
@@ -187,7 +193,9 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                         WebkitOverflowScrolling: 'touch', 
                         scrollbarWidth: 'none', 
                         direction: 'rtl',
-                        overscrollBehaviorX: 'contain'
+                        overscrollBehaviorX: 'contain',
+                        // إضافة Transition ناعم في حال تم إيقاف الأنيميشن ليعود لمكانه بهدوء
+                        transition: 'transform 0.3s ease-out'
                     }}
                 >
                     {/* Today Panel */}
@@ -206,63 +214,24 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                         </div>
                     </div>
                 </div>
-
-                {/* مؤشر التمرير الصامت (بدون نصوص أو إيموجي) */}
-                {showHint && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: '1rem',
-                        zIndex: 20, pointerEvents: 'none', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'radial-gradient(circle at center, rgba(0,0,0,0.25) 0%, transparent 70%)',
-                    }}>
-                        <div className="gesture-track">
-                            <div className="gesture-dot"></div>
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* CSS الأنيميشن الجديد لمسار الحركة */}
+            {/* CSS الأنيميشن الخاص بالـ Peek (النظرة الخاطفة) */}
             <style>{`
-                .gesture-track {
-                    width: 70px;
-                    height: 6px;
-                    background: rgba(255, 255, 255, 0.15);
-                    border-radius: 10px;
-                    position: relative;
-                    overflow: hidden;
-                    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-                    backdrop-filter: blur(2px);
+                /* بما أن الموقع RTL، سحب العنصر جهة اليمين (translateX موجب) 
+                  سيكشف جزءاً من العنصر الموجود على اليسار (مباريات الغد)
+                */
+                @keyframes peekScrollRTL {
+                    0% { transform: translateX(0); }
+                    10% { transform: translateX(45px); } /* شد قوي وسريع لكشف جزء من الغد */
+                    20% { transform: translateX(-5px); } /* ارتداد خفيف للجهة العكسية (Rubber-band) */
+                    25% { transform: translateX(0px); }  /* استقرار */
+                    100% { transform: translateX(0); }   /* انتظار حتى التكرار التالي */
                 }
 
-                .gesture-dot {
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    width: 30px;
-                    height: 100%;
-                    background: var(--gold, #FFD700); /* يفضل أن يكون بلون مميز في ثيمك مثل الذهبي */
-                    border-radius: 10px;
-                    box-shadow: 0 0 8px var(--gold, #FFD700);
-                    animation: wordlessSwipeGesture 2s infinite ease-in-out;
-                }
-
-                @keyframes wordlessSwipeGesture {
-                    0% {
-                        transform: translateX(35px); /* يبدأ من خارج المسار قليلاً */
-                        opacity: 0;
-                    }
-                    15% {
-                        opacity: 1;
-                    }
-                    75% {
-                        transform: translateX(-40px); /* يتحرك للجهة الأخرى محاكياً السحب */
-                        opacity: 1;
-                    }
-                    100% {
-                        transform: translateX(-45px);
-                        opacity: 0;
-                    }
+                .peek-scroll-anim {
+                    /* حركة تتكرر كل 3 ثواني للفت الانتباه بدون إزعاج */
+                    animation: peekScrollRTL 3s infinite cubic-bezier(0.25, 1, 0.5, 1);
                 }
             `}</style>
         </section>
