@@ -26,7 +26,6 @@ function MatchCard({ m }) {
             gap: '0.6rem',
             boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
             cursor: 'pointer',
-            // إخفاء الهايلايت الأزرق عند النقر
             WebkitTapHighlightColor: 'transparent',
             outline: 'none',
         }}>
@@ -78,22 +77,34 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     const safeToday = Array.isArray(todayMatches) ? todayMatches : [];
     const safeTomorrow = Array.isArray(tomorrowMatches) ? tomorrowMatches : [];
     
-    const [tab, setTab] = useState(safeToday.length > 0 ? 'today' : 'tomorrow');
+    // تحديد التبويب الافتراضي بدقة
+    const initialTab = safeToday.length > 0 ? 'today' : (safeTomorrow.length > 0 ? 'tomorrow' : 'today');
+    const [tab, setTab] = useState(initialTab);
     const [showHint, setShowHint] = useState(false);
     
-    // ريفرنس لعمل التمرير بدون أخطاء حسابية
     const scrollContainerRef = useRef(null);
     const todayPanelRef = useRef(null);
     const tomorrowPanelRef = useRef(null);
 
+    // معالجة التنبيه وتأخيره قليلاً لمنع إخفائه التلقائي بسبب الـ Layout Shift
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const hasSwiped = localStorage.getItem('hasSwipedMatches');
             if (!hasSwiped && safeTomorrow.length > 0 && safeToday.length > 0) {
-                setShowHint(true);
+                const timer = setTimeout(() => setShowHint(true), 600);
+                return () => clearTimeout(timer);
             }
         }
     }, [safeToday.length, safeTomorrow.length]);
+
+    // مزامنة موضع التمرير الأولي إذا كان التبويب الافتراضي هو "الغد"
+    useEffect(() => {
+        if (initialTab === 'tomorrow' && tomorrowPanelRef.current) {
+            setTimeout(() => {
+                tomorrowPanelRef.current?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+            }, 100);
+        }
+    }, [initialTab]);
 
     const dismissHint = () => {
         if (showHint) {
@@ -102,34 +113,39 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         }
     };
 
-    // ميكانزم التمرير المحدث لحل أخطاء الـ RTL
-    const handleScroll = (e) => {
-        dismissHint();
-        const container = e.target;
-        const maxScroll = container.scrollWidth - container.clientWidth;
+    // ميكانزم حديث ومتوافق مع جميع المتصفحات للـ RTL (يعتمد على الأبعاد البصرية)
+    const handleScroll = () => {
+        if (!scrollContainerRef.current || !todayPanelRef.current || !tomorrowPanelRef.current) return;
         
-        // منع القسمة على صفر إذا لم يكن هناك مساحة للتمرير
-        if (maxScroll <= 0) return; 
-
-        // نسبة التمرير من 0 إلى 1 (لحل اختلاف المتصفحات في الإشارات السالبة والموجبة)
-        const scrollRatio = Math.abs(container.scrollLeft) / maxScroll;
-
-        // تحديث التبويب النشط بسلاسة بدون ارتباك
-        if (scrollRatio < 0.3 && tab !== 'today') setTab('today');
-        else if (scrollRatio > 0.7 && tab !== 'tomorrow') setTab('tomorrow');
+        const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const containerCenter = containerRect.left + (containerRect.width / 2);
+        
+        const todayRect = todayPanelRef.current.getBoundingClientRect();
+        const tomorrowRect = tomorrowPanelRef.current.getBoundingClientRect();
+        
+        const todayDist = Math.abs(todayRect.left + (todayRect.width / 2) - containerCenter);
+        const tomorrowDist = Math.abs(tomorrowRect.left + (tomorrowRect.width / 2) - containerCenter);
+        
+        // القسم الأقرب لمنتصف الحاوية هو القسم النشط
+        const activeTab = todayDist < tomorrowDist ? 'today' : 'tomorrow';
+        
+        if (tab !== activeTab) {
+            setTab(activeTab);
+        }
     };
 
-    // دالة الأزرار المحدثة (تستخدم ScrollIntoView كحل نهائي ومستقر)
     const scrollToTab = (t) => {
         dismissHint();
         setTab(t);
         
         const targetPanel = t === 'today' ? todayPanelRef.current : tomorrowPanelRef.current;
         if (targetPanel) {
+            // استخدام center يحل أخطاء الـ RTL في جميع المتصفحات
             targetPanel.scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'nearest', 
-                inline: 'start' 
+                inline: 'center' 
             });
         }
     };
@@ -145,7 +161,6 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 <div style={{
                     display: 'flex', background: 'var(--bg-elevated)', borderRadius: '100px',
                     padding: '4px', border: '1px solid var(--border)', width: '100%', maxWidth: '260px', position: 'relative',
-                    // منع تحديد المربع عند لمس الحاوية بالكامل
                     WebkitTapHighlightColor: 'transparent',
                 }}>
                     <div style={{
@@ -169,6 +184,8 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 <div 
                     ref={scrollContainerRef} 
                     onScroll={handleScroll} 
+                    onTouchStart={dismissHint} // إخفاء التنبيه عند اللمس الفعلي
+                    onMouseDown={dismissHint}  // إخفاء التنبيه عند النقر الفعلي بالمؤشر
                     style={{
                         display: 'flex', 
                         overflowX: 'auto', 
@@ -176,7 +193,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                         WebkitOverflowScrolling: 'touch', 
                         scrollbarWidth: 'none', 
                         direction: 'rtl',
-                        overscrollBehaviorX: 'contain' // يمنع إغلاق الصفحة عند التمرير الجانبي القوي
+                        overscrollBehaviorX: 'contain'
                     }}
                 >
                     {/* Today Panel */}
@@ -210,7 +227,6 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
                 )}
             </div>
 
-            {/* Animation */}
             <style>{`
                 @keyframes swipeBounce {
                     0%, 100% { transform: translateX(0); }
@@ -233,7 +249,6 @@ const tabBtn = (active) => ({
     color: active ? 'var(--gold)' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800,
     cursor: 'pointer', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', 
     justifyContent: 'center', gap: '6px', 
-    // التعديلات الأساسية للأزرار هنا
     outline: 'none',
     WebkitTapHighlightColor: 'transparent', 
     userSelect: 'none'
@@ -244,7 +259,8 @@ const countBadge = (active) => ({
     color: active ? 'var(--gold)' : 'var(--text-muted)', padding: '1px 6px', borderRadius: '10px', fontWeight: 900
 });
 
-const panelStyle = { width: '100%', flexShrink: 0, scrollSnapAlign: 'start' }; // start أفضل للـ scrollIntoView
+// تغيير scrollSnapAlign إلى center لمزيد من التوافقية مع الـ RTL
+const panelStyle = { width: '100%', flexShrink: 0, scrollSnapAlign: 'center' }; 
 const listWrapper = { display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 1rem', maxWidth: '550px', margin: '0 auto' };
 
 const EmptyState = ({ text }) => (
