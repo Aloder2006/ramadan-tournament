@@ -27,63 +27,62 @@ function TeamsTable({ teams, onRefresh }) {
     const saveEdit = async (id) => { await updateTeam(id, { name, group }); setEditId(null); onRefresh(); };
     const del = async (id) => { if (!window.confirm('حذف هذا الفريق؟')) return; await deleteTeam(id); onRefresh(); };
 
-    const thSt = { padding: '.45rem .5rem', fontSize: '.62rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center', borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)', whiteSpace: 'nowrap' };
-    const tdSt = (extra = {}) => ({ padding: '.42rem .5rem', fontSize: '.82rem', color: 'var(--text-secondary)', textAlign: 'center', borderBottom: '1px solid color-mix(in srgb, var(--border) 50%, transparent)', ...extra });
-
     return (
         <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 580 }}>
+            <table className="teams-table" style={{ minWidth: 580 }}>
                 <thead>
                     <tr>
-                        <th style={{ ...thSt, width: 32 }}>#</th>
-                        <th style={{ ...thSt, textAlign: 'right', paddingRight: '.75rem', minWidth: 120 }}>الفريق</th>
-                        <th style={{ ...thSt, width: 38 }}>مج</th>
-                        <th style={{ ...thSt, width: 38 }}>نق</th>
-                        <th style={{ ...thSt, width: 36 }}>لع</th>
-                        <th style={{ ...thSt, width: 36 }}>ف</th>
-                        <th style={{ ...thSt, width: 36 }}>ت</th>
-                        <th style={{ ...thSt, width: 36 }}>خ</th>
-                        <th style={{ ...thSt, width: 36 }}>له</th>
-                        <th style={{ ...thSt, width: 36 }}>عل</th>
-                        <th style={{ ...thSt, width: 42 }}>±</th>
-                        <th style={{ ...thSt, width: 64 }}></th>
+                        <th style={{ width: 32 }}>#</th>
+                        <th style={{ textAlign: 'right', paddingRight: '.75rem', minWidth: 120 }}>الفريق</th>
+                        <th style={{ width: 38 }}>مج</th>
+                        <th style={{ width: 38 }}>نق</th>
+                        <th style={{ width: 36 }}>لع</th>
+                        <th style={{ width: 36 }}>ف</th>
+                        <th style={{ width: 36 }}>ت</th>
+                        <th style={{ width: 36 }}>خ</th>
+                        <th style={{ width: 36 }}>له</th>
+                        <th style={{ width: 36 }}>عل</th>
+                        <th style={{ width: 42 }}>±</th>
+                        <th style={{ width: 64 }}></th>
                     </tr>
                 </thead>
                 <tbody>
                     {teams.length === 0 ? (
                         <tr><td colSpan="12" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>لا يوجد فرق بعد</td></tr>
                     ) : teams.map((t, i) => (
-                        <tr key={t._id} style={{ background: editId === t._id ? 'var(--bg-elevated)' : 'var(--bg-card)', transition: 'background .1s' }}>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', fontWeight: 700, fontSize: '.72rem', color: 'var(--text-muted)' })}>{i + 1}</td>
-                            <td style={{ ...tdSt({ textAlign: 'right', paddingRight: '.75rem' }), display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-                                <div style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--bg-elevated)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.65rem', fontWeight: 900, color: 'var(--text-muted)', fontFamily: 'Inter,sans-serif', flexShrink: 0 }}>{t.name?.[0]}</div>
-                                {editId === t._id
-                                    ? <input value={name} onChange={e => setName(e.target.value)} style={{ flex: 1, padding: '.3rem .5rem', background: 'var(--bg-input)', border: '1px solid var(--gold-border)', borderRadius: 3, color: 'var(--text-primary)', fontSize: '.82rem', fontFamily: 'inherit' }} />
-                                    : <span style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>}
+                        <tr key={t._id} style={{ background: editId === t._id ? 'var(--bg-elevated)' : undefined }}>
+                            <td style={{ fontFamily: 'Inter,sans-serif', fontWeight: 700, fontSize: '.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>{i + 1}</td>
+                            <td style={{ textAlign: 'right', paddingRight: '.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                                    <div className="bt-avatar">{t.name?.[0]}</div>
+                                    {editId === t._id
+                                        ? <input value={name} onChange={e => setName(e.target.value)} className="form-input" style={{ flex: 1, padding: '.3rem .5rem', fontSize: '.82rem' }} />
+                                        : <span style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>}
+                                </div>
                             </td>
-                            <td style={tdSt()}>
+                            <td style={{ textAlign: 'center' }}>
                                 {editId === t._id
-                                    ? <select value={group} onChange={e => setGroup(e.target.value)} style={{ padding: '.3rem .4rem', background: 'var(--bg-input)', border: '1px solid var(--gold-border)', borderRadius: 3, color: 'var(--text-primary)', fontSize: '.78rem', fontFamily: 'inherit' }}>
+                                    ? <select value={group} onChange={e => setGroup(e.target.value)} className="form-select" style={{ padding: '.3rem .4rem', fontSize: '.78rem' }}>
                                         {config.groups.map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
-                                    : <span style={{ fontSize: '.65rem', fontWeight: 800, color: 'var(--gold)', background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', padding: '.06rem .32rem', borderRadius: 3 }}>{t.group}</span>}
+                                    : <span className="badge badge-gold">{t.group}</span>}
                             </td>
-                            <td style={tdSt({ color: 'var(--gold)', fontWeight: 900, fontFamily: 'Inter,sans-serif' })}>{t.points}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.played}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', color: 'var(--success)' })}>{t.won}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.drawn}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', color: 'var(--danger)' })}>{t.lost}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.gf}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif' })}>{t.ga}</td>
-                            <td style={tdSt({ fontFamily: 'Inter,sans-serif', fontWeight: 700, color: t.gd > 0 ? 'var(--success)' : t.gd < 0 ? 'var(--danger)' : 'var(--text-muted)' })}>{t.gd > 0 ? `+${t.gd}` : t.gd}</td>
-                            <td style={tdSt()}>
+                            <td className="pts-cell" style={{ textAlign: 'center' }}>{t.points}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', textAlign: 'center' }}>{t.played}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', textAlign: 'center', color: 'var(--success)' }}>{t.won}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', textAlign: 'center' }}>{t.drawn}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', textAlign: 'center', color: 'var(--danger)' }}>{t.lost}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', textAlign: 'center' }}>{t.gf}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', textAlign: 'center' }}>{t.ga}</td>
+                            <td style={{ fontFamily: 'Inter,sans-serif', fontWeight: 700, textAlign: 'center', color: t.gd > 0 ? 'var(--success)' : t.gd < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{t.gd > 0 ? `+${t.gd}` : t.gd}</td>
+                            <td>
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '.3rem' }}>
                                     {editId === t._id ? <>
-                                        <button onClick={() => saveEdit(t._id)} style={{ width: 26, height: 26, border: '1px solid var(--success)', borderRadius: 3, background: 'rgba(61,186,114,.15)', color: 'var(--success)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
-                                        <button onClick={() => setEditId(null)} style={{ width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 3, background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                                        <button className="btn btn-success btn-xs" onClick={() => saveEdit(t._id)}>✓</button>
+                                        <button className="btn btn-ghost btn-xs" onClick={() => setEditId(null)}>✕</button>
                                     </> : <>
-                                        <button onClick={() => startEdit(t)} style={{ width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 3, background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✏</button>
-                                        <button onClick={() => del(t._id)} style={{ width: 26, height: 26, border: '1px solid var(--danger)', borderRadius: 3, background: 'rgba(224,75,75,.1)', color: 'var(--danger)', cursor: 'pointer', fontSize: '.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🗑</button>
+                                        <button className="btn btn-ghost btn-xs" onClick={() => startEdit(t)}>✏</button>
+                                        <button className="btn btn-danger btn-xs" onClick={() => del(t._id)}>🗑</button>
                                     </>}
                                 </div>
                             </td>
@@ -401,27 +400,35 @@ export default function AdminPage({ onLogout }) {
     const groupMatches = matches.filter(m => m.phase !== 'knockout');
 
     const tabs = [
-        { id: 'teams', label: 'الفرق' },
-        { id: 'group-matches', label: 'مباريات المجموعات' },
-        { id: 'knockout', label: 'الإقصاء' },
-        { id: 'export', label: 'تصدير' },
-        { id: 'settings', label: 'الإعدادات' },
-        { id: 'reset', label: 'إعادة تعيين' },
+        { id: 'teams', icon: '👥', label: 'الفرق' },
+        { id: 'group-matches', icon: '⚽', label: 'المباريات' },
+        { id: 'knockout', icon: '🏆', label: 'الإقصاء' },
+        { id: 'export', icon: '📸', label: 'تصدير' },
+        { id: 'settings', icon: '⚙️', label: 'الإعدادات' },
+        { id: 'reset', icon: '⚠️', label: 'إعادة تعيين' },
     ];
 
     return (
         <div className="page admin-page">
             <header className="admin-header">
                 <div className="admin-header-inner">
-                    <div>
-                        <h1 className="admin-title">لوحة الإدارة</h1>
-                        <p className="admin-subtitle">{settings?.phase === 'knockout' ? 'مرحلة الإقصاء' : 'دور المجموعات'} · {settings?.tournamentName || config.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--gold-dim)', border: '1px solid var(--gold-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
+                            {settings?.logo || '🏟️'}
+                        </div>
+                        <div>
+                            <h1 className="admin-title">لوحة الإدارة</h1>
+                            <p className="admin-subtitle">
+                                <span className="badge badge-gold" style={{ marginLeft: '.4rem' }}>{settings?.phase === 'knockout' ? 'إقصاء' : 'مجموعات'}</span>
+                                {settings?.tournamentName || config.name}
+                            </p>
+                        </div>
                     </div>
                     <div className="admin-header-actions">
                         <div className="btn btn-ghost btn-sm" style={{ pointerEvents: 'none', color: 'var(--text-secondary)' }}>
-                            👁️ الزيارات: <strong style={{ color: 'var(--text-primary)', marginRight: '0.35rem' }}>{settings?.visitorsCount || 0}</strong>
+                            👁️ <strong style={{ color: 'var(--text-primary)', marginRight: '0.25rem' }}>{settings?.visitorsCount || 0}</strong>
                         </div>
-                        <a href="/" className="btn btn-ghost btn-sm">الرئيسية</a>
+                        <a href="/" className="btn btn-ghost btn-sm">🏠 الرئيسية</a>
                         <button className="btn btn-danger btn-sm" onClick={onLogout}>خروج</button>
                     </div>
                 </div>
@@ -429,8 +436,9 @@ export default function AdminPage({ onLogout }) {
 
             {/* Tabs */}
             <div className="tabs">
-                {tabs.map(({ id, label }) => (
+                {tabs.map(({ id, icon, label }) => (
                     <button key={id} className={`tab-btn ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>
+                        <span style={{ fontSize: '.75rem' }}>{icon}</span>
                         {label}
                         {id === 'knockout' && settings?.phase === 'knockout' && <span className="live-dot" />}
                     </button>
@@ -527,27 +535,27 @@ export default function AdminPage({ onLogout }) {
                         <h2 className="card-title" style={{ color: 'var(--danger)' }}>⚠️ منطقة الخطر</h2>
                         <p className="card-desc">الإجراءات هنا لا يمكن التراجع عنها.</p>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                            <div className="reset-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--bg-base)', borderRadius: '8px' }}>
+                        <div className="reset-zone">
+                            <div className="reset-card">
                                 <div>
-                                    <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', marginBottom: '0.2rem' }}>إعادة تعيين دور المجموعات</h3>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>حذف مباريات المجموعات وتصفير نقاط الفرق (0-0-0).</p>
+                                    <div className="reset-card-title">إعادة تعيين دور المجموعات</div>
+                                    <div className="reset-card-desc">حذف مباريات المجموعات وتصفير نقاط الفرق (0-0-0).</div>
                                 </div>
                                 <button className="btn btn-danger btn-sm" onClick={() => handleReset('groups')} disabled={resetting}>تصفير المجموعات</button>
                             </div>
 
-                            <div className="reset-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--bg-base)', borderRadius: '8px' }}>
+                            <div className="reset-card">
                                 <div>
-                                    <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', marginBottom: '0.2rem' }}>إعادة تعيين دور الإقصاء</h3>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>حذف مباريات الإقصاء وإفراغ القرعة والمتأهلين.</p>
+                                    <div className="reset-card-title">إعادة تعيين دور الإقصاء</div>
+                                    <div className="reset-card-desc">حذف مباريات الإقصاء وإفراغ القرعة والمتأهلين.</div>
                                 </div>
                                 <button className="btn btn-danger btn-sm" onClick={() => handleReset('knockout')} disabled={resetting}>تصفير الإقصاء</button>
                             </div>
 
-                            <div className="reset-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(224, 92, 92, 0.1)', borderRadius: '8px', border: '1px solid var(--danger)' }}>
+                            <div className="reset-card reset-card-danger">
                                 <div>
-                                    <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', marginBottom: '0.2rem', color: 'var(--danger)' }}>🔥 تصفير البطولة بالكامل</h3>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>حذف جميع الفرق والمباريات والإعدادات. (بداية جديدة)</p>
+                                    <div className="reset-card-title" style={{ color: 'var(--danger)' }}>🔥 تصفير البطولة بالكامل</div>
+                                    <div className="reset-card-desc">حذف جميع الفرق والمباريات والإعدادات. (بداية جديدة)</div>
                                 </div>
                                 <button className="btn btn-danger btn-sm" onClick={() => handleReset('all')} disabled={resetting}>حذف كل شيء</button>
                             </div>

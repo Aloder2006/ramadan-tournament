@@ -55,8 +55,8 @@ export function applySettingsColors(settings) {
 /* ─── sub-components ─── */
 function Field({ label, children }) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-            <label style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</label>
+        <div className="form-group">
+            <label className="form-label">{label}</label>
             {children}
         </div>
     );
@@ -65,12 +65,9 @@ function Field({ label, children }) {
 function ColorField({ label, value, onChange }) {
     return (
         <Field label={label}>
-            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
-                <input type="color" value={value || '#000000'} onChange={e => onChange(e.target.value)}
-                    style={{ width: 36, height: 36, padding: 2, border: '1px solid var(--border)', borderRadius: 4, background: 'none', cursor: 'pointer', flexShrink: 0 }} />
-                <input value={value || ''} maxLength={7} onChange={e => onChange(e.target.value)}
-                    placeholder="#rrggbb"
-                    style={{ flex: 1, padding: '.4rem .6rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontFamily: 'Inter, monospace', fontSize: '.82rem' }} />
+            <div className="settings-color-row">
+                <input type="color" className="settings-color-swatch" value={value || '#000000'} onChange={e => onChange(e.target.value)} />
+                <input className="form-input settings-color-hex" value={value || ''} maxLength={7} onChange={e => onChange(e.target.value)} placeholder="#rrggbb" />
             </div>
         </Field>
     );
@@ -79,13 +76,9 @@ function ColorField({ label, value, onChange }) {
 /* ─── section block ─── */
 function Section({ title, children }) {
     return (
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
-            <div style={{ padding: '.55rem .85rem', borderBottom: '1px solid var(--border)', fontSize: '.72rem', fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.06em', background: 'var(--bg-elevated)' }}>
-                {title}
-            </div>
-            <div style={{ padding: '.85rem', display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
-                {children}
-            </div>
+        <div className="settings-card">
+            <div className="settings-card-header">{title}</div>
+            <div className="settings-card-body">{children}</div>
         </div>
     );
 }
@@ -153,66 +146,51 @@ export default function TournamentSettingsEditor({ settings, onSaved }) {
     const finalEmoji = customEmoji.trim() || emoji;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.85rem' }}>
+        <div className="settings-editor">
 
             {/* ── LIVE PREVIEW ── */}
-            <div style={{
-                display: 'flex', alignItems: 'center', gap: '.75rem',
-                padding: '.85rem', borderRadius: 6,
-                background: colorBgBase, border: `1px solid ${primaryColor}44`,
-            }}>
-                <div style={{ width: 48, height: 48, borderRadius: 6, background: primaryColor + '20', border: `1px solid ${primaryColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>
+            <div className="settings-preview" style={{ background: colorBgBase, borderColor: primaryColor + '44' }}>
+                <div className="settings-preview-icon" style={{ background: primaryColor + '20', borderColor: primaryColor + '44' }}>
                     {finalEmoji}
                 </div>
                 <div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 900, color: primaryColor, fontFamily: `'${logoFont}', sans-serif` }}>{name || 'اسم البطولة'}</div>
-                    {subtitle && <div style={{ fontSize: '.8rem', color: colorTextPrimary + '99', fontFamily: `'${bodyFont}', sans-serif`, marginTop: 2 }}>{subtitle}</div>}
+                    <div className="settings-preview-name" style={{ color: primaryColor, fontFamily: `'${logoFont}', sans-serif` }}>{name || 'اسم البطولة'}</div>
+                    {subtitle && <div className="settings-preview-sub" style={{ color: colorTextPrimary + '99', fontFamily: `'${bodyFont}', sans-serif` }}>{subtitle}</div>}
                 </div>
             </div>
 
             {/* ── IDENTITY ── */}
             <Section title="هوية البطولة">
                 <Field label="اسم البطولة">
-                    <input value={name} onChange={e => setName(e.target.value)} placeholder="دوري رمضان"
-                        style={{ padding: '.5rem .7rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontSize: '.92rem', width: '100%', boxSizing: 'border-box' }} />
+                    <input className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="دوري رمضان" />
                 </Field>
                 <Field label="النص الفرعي">
-                    <input value={subtitle} onChange={e => setSubtitle(e.target.value)} placeholder="1447 هـ — 2026م"
-                        style={{ padding: '.5rem .7rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontSize: '.92rem', width: '100%', boxSizing: 'border-box' }} />
+                    <input className="form-input" value={subtitle} onChange={e => setSubtitle(e.target.value)} placeholder="1447 هـ — 2026م" />
                 </Field>
                 <Field label="رمز الشعار">
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', alignItems: 'center' }}>
+                    <div className="settings-emoji-grid">
                         {LOGO_EMOJIS.map(e => (
-                            <button key={e} onClick={() => { setEmoji(e); setCustomEmoji(''); }}
-                                style={{
-                                    width: 36, height: 36, fontSize: 18, cursor: 'pointer', borderRadius: 4,
-                                    background: emoji === e && !customEmoji ? 'var(--gold-dim)' : 'var(--bg-elevated)',
-                                    border: `1px solid ${emoji === e && !customEmoji ? 'var(--gold-border)' : 'var(--border)'}`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}>{e}</button>
+                            <button key={e} className={`settings-emoji-btn ${emoji === e && !customEmoji ? 'active' : ''}`}
+                                onClick={() => { setEmoji(e); setCustomEmoji(''); }}>{e}</button>
                         ))}
-                        <input value={customEmoji} onChange={e => setCustomEmoji(e.target.value)} placeholder="أو اكتب" maxLength={4}
-                            style={{ width: 70, padding: '.35rem .5rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontSize: '.9rem' }} />
+                        <input className="form-input settings-emoji-custom" value={customEmoji} onChange={e => setCustomEmoji(e.target.value)} placeholder="أو اكتب" maxLength={4} />
                     </div>
                 </Field>
             </Section>
 
             {/* ── THEME PRESETS ── */}
             <Section title="قوالب جاهزة">
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem' }}>
+                <div className="settings-theme-grid">
                     {COLOR_THEMES.map(t => (
-                        <button key={t.id} onClick={() => applyTheme(t)}
-                            style={{
-                                padding: '.35rem .75rem', borderRadius: 4, cursor: 'pointer', fontSize: '.78rem', fontWeight: 700,
-                                border: `1px solid ${t.primary}66`, color: t.primary, background: t.primary + '16',
-                            }}>{t.label}</button>
+                        <button key={t.id} className="settings-theme-btn" onClick={() => applyTheme(t)}
+                            style={{ borderColor: t.primary + '66', color: t.primary, background: t.primary + '16' }}>{t.label}</button>
                     ))}
                 </div>
             </Section>
 
             {/* ── COLORS ── */}
             <Section title="الألوان">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '.65rem' }}>
+                <div className="admin-form-row">
                     <ColorField label="اللون الرئيسي" value={primaryColor} onChange={setPrimary} />
                     <ColorField label="اللون الثانوي" value={secondaryColor} onChange={setSecondary} />
                     <ColorField label="خلفية الصفحة" value={colorBgBase} onChange={setBgBase} />
@@ -227,39 +205,28 @@ export default function TournamentSettingsEditor({ settings, onSaved }) {
 
             {/* ── FONTS ── */}
             <Section title="الخطوط">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '.65rem' }}>
+                <div className="admin-form-row" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
                     <Field label="خط العناوين">
-                        <select value={logoFont} onChange={e => setLogoFont(e.target.value)}
-                            style={{ padding: '.5rem .7rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontSize: '.88rem', width: '100%' }}>
+                        <select className="form-select" value={logoFont} onChange={e => setLogoFont(e.target.value)}>
                             {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                         </select>
-                        <div style={{ fontSize: '.9rem', color: primaryColor, fontFamily: `'${logoFont}', sans-serif`, marginTop: 2, padding: '.2rem .3rem' }}>معاينة — دوري رمضان</div>
+                        <div className="settings-font-preview" style={{ color: primaryColor, fontFamily: `'${logoFont}', sans-serif` }}>معاينة — دوري رمضان</div>
                     </Field>
                     <Field label="خط النصوص">
-                        <select value={bodyFont} onChange={e => setBodyFont(e.target.value)}
-                            style={{ padding: '.5rem .7rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontSize: '.88rem', width: '100%' }}>
+                        <select className="form-select" value={bodyFont} onChange={e => setBodyFont(e.target.value)}>
                             {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                         </select>
-                        <div style={{ fontSize: '.86rem', color: 'var(--text-secondary)', fontFamily: `'${bodyFont}', sans-serif`, marginTop: 2, padding: '.2rem .3rem' }}>معاينة — الفريق الأول 3 - 1 الثاني</div>
+                        <div className="settings-font-preview" style={{ fontFamily: `'${bodyFont}', sans-serif` }}>معاينة — الفريق الأول 3 - 1 الثاني</div>
                     </Field>
                 </div>
             </Section>
 
             {/* ── SAVE ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-                <button onClick={handleSave} disabled={saving}
-                    style={{
-                        padding: '.55rem 1.5rem', borderRadius: 4, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
-                        background: 'var(--gold)', color: '#000', fontWeight: 800, fontFamily: 'Tajawal, sans-serif', fontSize: '.95rem',
-                        opacity: saving ? .7 : 1, transition: 'opacity .12s',
-                    }}>
+            <div className="settings-save-row">
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
                     {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
                 </button>
-                {msg && (
-                    <span style={{ fontSize: '.82rem', fontWeight: 700, color: msg === 'تم الحفظ' ? 'var(--success)' : 'var(--danger)' }}>
-                        {msg}
-                    </span>
-                )}
+                {msg && <span className={`settings-save-msg ${msg === 'تم الحفظ' ? 'msg-success' : 'msg-error'}`}>{msg}</span>}
             </div>
         </div>
     );
