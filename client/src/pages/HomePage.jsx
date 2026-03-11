@@ -7,6 +7,7 @@ import BracketTree from '../components/BracketTree';
 import Skeleton from '../components/Skeleton';
 import { InstallBanner } from '../hooks/useInstallPrompt';
 import { applySettingsColors } from '../admin/panels/SettingsPanel';
+import { Instagram, Facebook } from 'lucide-react';
 import config from '../tournament.config';
 
 // Dynamic page title for SEO
@@ -41,6 +42,7 @@ export default function HomePage() {
             if (sett && !sett.message) {
                 setSettings(sett);
                 applySettingsColors(sett);
+                if (sett.phase) localStorage.setItem('lastPhase', sett.phase);
             }
             setKnockoutMatches(Array.isArray(ko) ? ko : []);
         } catch (e) { console.error(e); }
@@ -63,19 +65,22 @@ export default function HomePage() {
     // Dynamic SEO title
     useDocumentTitle(`${tEmoji} ${tName} — ${isKO ? 'دور الإقصاء' : 'دور المجموعات'}`);
 
-    if (loading) return (
-        <div className="hp-page">
-            <header className="hp-navbar">
-                <div className="hp-navbar-inner">
-                    <div className="hp-logo-group">
-                        <span className="hp-logo-emoji">⚽</span>
-                        <h1 className="hp-logo-name">{config.name}</h1>
+    if (loading) {
+        const lastPhase = localStorage.getItem('lastPhase');
+        return (
+            <div className="hp-page">
+                <header className="hp-navbar">
+                    <div className="hp-navbar-inner">
+                        <div className="hp-logo-group">
+                            <span className="hp-logo-emoji">⚽</span>
+                            <h1 className="hp-logo-name">{config.name}</h1>
+                        </div>
                     </div>
-                </div>
-            </header>
-            <Skeleton type="full-page" />
-        </div>
-    );
+                </header>
+                <Skeleton type={lastPhase === 'knockout' ? 'full-page-knockout' : 'full-page'} />
+            </div>
+        );
+    }
 
     const finalMatch = knockoutMatches.find(m => m.knockoutRound === 'النهائي' && m.status === 'Completed');
     const champion = finalMatch
@@ -177,10 +182,10 @@ export default function HomePage() {
                     </div>
                     <div className="site-footer-socials">
                         <a href="https://www.instagram.com/i4rqm/" target="_blank" rel="noopener noreferrer" className="site-footer-social" aria-label="Instagram">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+                            <Instagram size={18} />
                         </a>
                         <a href="https://www.facebook.com/i4rqm" target="_blank" rel="noopener noreferrer" className="site-footer-social" aria-label="Facebook">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
+                            <Facebook size={18} />
                         </a>
                     </div>
                     <div className="site-footer-copy">تصميم وتطوير <span className="site-footer-author">عبدالرحمن عاطف</span> © {new Date().getFullYear()}</div>

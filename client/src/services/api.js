@@ -67,7 +67,7 @@ export const updateSettings = (data) =>
 export const recordVisit = () =>
     request('/api/settings/visit', { method: 'POST' });
 
-// ── Reset (admin, requires password) ────────────────────────────
+// ── Reset (requires separate RESET_PASSWORD) ───────────────────
 export const resetGroups = (password) =>
     request('/api/settings/reset/groups', { method: 'DELETE', headers: authHeaders(), body: JSON.stringify({ password }) });
 export const resetKnockout = (password) =>

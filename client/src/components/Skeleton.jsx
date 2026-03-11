@@ -116,13 +116,70 @@ function SkeletonHistoryRow() {
 }
 
 /* ─────────────────────────────────────────────
+   BRACKET CARD SKELETON
+   Mimics a bt2-card: team1 | separator | team2
+───────────────────────────────────────────── */
+function SkeletonBracketCard() {
+    return (
+        <div className="sk-bracket-card">
+            <div className="sk-bracket-slot">
+                <Bone className="sk-rect" style={{ width: '60%', height: 12 }} />
+                <Bone className="sk-rect" style={{ width: 22, height: 14 }} />
+            </div>
+            <div className="sk-bracket-sep" />
+            <div className="sk-bracket-slot">
+                <Bone className="sk-rect" style={{ width: '50%', height: 12 }} />
+                <Bone className="sk-rect" style={{ width: 22, height: 14 }} />
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────
+   BRACKET TREE SKELETON
+   Mimics: tab bar + 3 rounds (4, 2, 1 cards)
+───────────────────────────────────────────── */
+function SkeletonBracket() {
+    return (
+        <div className="sk-bracket">
+            {/* Fake tab bar */}
+            <div className="sk-bracket-tabs">
+                <Bone className="sk-bracket-tab" />
+                <Bone className="sk-bracket-tab" />
+                <Bone className="sk-bracket-tab" />
+            </div>
+            {/* Rounds */}
+            <div className="sk-bracket-rounds">
+                {/* QF — 4 cards */}
+                <div className="sk-bracket-round">
+                    <Bone className="sk-rect" style={{ width: 70, height: 10, margin: '0 auto 8px' }} />
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonBracketCard key={i} />)}
+                </div>
+                {/* SF — 2 cards */}
+                <div className="sk-bracket-round">
+                    <Bone className="sk-rect" style={{ width: 70, height: 10, margin: '0 auto 8px' }} />
+                    {Array.from({ length: 2 }).map((_, i) => <SkeletonBracketCard key={i} />)}
+                </div>
+                {/* Final — 1 card */}
+                <div className="sk-bracket-round">
+                    <Bone className="sk-rect" style={{ width: 50, height: 10, margin: '0 auto 8px' }} />
+                    <SkeletonBracketCard />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────
    MAIN EXPORT
    <Skeleton type="match-card" count={3} />
    <Skeleton type="table-row" count={4} />
    <Skeleton type="group-table" count={4} />
    <Skeleton type="hero-banner" />
    <Skeleton type="history-row" count={3} />
+   <Skeleton type="bracket" />
    <Skeleton type="full-page" />
+   <Skeleton type="full-page-knockout" />
 ───────────────────────────────────────────── */
 export default function Skeleton({ type = 'match-card', count = 1 }) {
     const items = Array.from({ length: count });
@@ -156,6 +213,9 @@ export default function Skeleton({ type = 'match-card', count = 1 }) {
                 </div>
             );
 
+        case 'bracket':
+            return <SkeletonBracket />;
+
         case 'full-page':
             return (
                 <div className="sk-full-page page-fade-in">
@@ -169,6 +229,27 @@ export default function Skeleton({ type = 'match-card', count = 1 }) {
                     <div className="sk-groups-grid">
                         {Array.from({ length: 4 }).map((_, i) => <SkeletonGroupTable key={i} />)}
                     </div>
+                    <div className="sk-section-divider">
+                        <Bone className="sk-section-label" />
+                    </div>
+                    <div className="sk-history-group">
+                        <Bone className="sk-date-label-bone" />
+                        {Array.from({ length: 3 }).map((_, i) => <SkeletonHistoryRow key={i} />)}
+                    </div>
+                </div>
+            );
+
+        case 'full-page-knockout':
+            return (
+                <div className="sk-full-page page-fade-in">
+                    <SkeletonHeroBanner />
+                    <div className="sk-match-list">
+                        {Array.from({ length: 2 }).map((_, i) => <SkeletonMatchCard key={i} />)}
+                    </div>
+                    <div className="sk-section-divider">
+                        <Bone className="sk-section-label" />
+                    </div>
+                    <SkeletonBracket />
                     <div className="sk-section-divider">
                         <Bone className="sk-section-label" />
                     </div>

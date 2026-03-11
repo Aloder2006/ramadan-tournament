@@ -6171,8 +6171,8 @@ img {
 .bt2-champ-inner {
   position: relative; z-index: 1;
 }
-.bt2-champ-crown {
-  font-size: 2rem;
+.bt2-champ-trophy {
+  color: var(--gold);
   margin-bottom: .3rem;
   animation: bt2-crown-bob 2s ease-in-out infinite;
 }

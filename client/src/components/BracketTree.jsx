@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { Trophy, Crown, Medal, Clock, Zap, Star } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════
    Helpers
@@ -14,9 +15,9 @@ const teamName = (t) => t?.name || '—';
 const teamId = (t) => t?._id || t;
 
 const ROUNDS = [
-    { key: 'ربع النهائي', label: 'ربع النهائي', icon: '④' },
-    { key: 'نصف النهائي', label: 'نصف النهائي', icon: '②' },
-    { key: 'النهائي', label: 'النهائي', icon: '🏆' },
+    { key: 'ربع النهائي', label: 'ربع النهائي' },
+    { key: 'نصف النهائي', label: 'نصف النهائي' },
+    { key: 'النهائي', label: 'النهائي' },
 ];
 
 /* ═══════════════════════════════════════════════
@@ -28,9 +29,9 @@ function MatchCard({ match, slotA, slotB, isChampionMatch }) {
     if (empty) {
         return (
             <div className="bt2-card bt2-card-empty">
-                <div className="bt2-slot"><span className="bt2-await">⏳ بانتظار</span></div>
+                <div className="bt2-slot"><span className="bt2-await"><Clock size={12} /> بانتظار</span></div>
                 <div className="bt2-sep" />
-                <div className="bt2-slot"><span className="bt2-await">⏳ بانتظار</span></div>
+                <div className="bt2-slot"><span className="bt2-await"><Clock size={12} /> بانتظار</span></div>
             </div>
         );
     }
@@ -58,14 +59,14 @@ function MatchCard({ match, slotA, slotB, isChampionMatch }) {
             <div className={`bt2-slot ${isW1 ? 'bt2-slot-w' : ''} ${done && !isW1 ? 'bt2-slot-l' : ''}`}>
                 <div className="bt2-team">
                     <span className="bt2-tname">{t1}</span>
-                    {isW1 && <span className="bt2-crown-mini">👑</span>}
+                    {isW1 && <Crown size={13} className="bt2-crown-mini" />}
                 </div>
                 <span className={`bt2-sc ${isW1 ? 'bt2-sc-w' : ''}`}>{done ? match.score1 : ''}</span>
             </div>
 
             <div className="bt2-sep">
                 {match?.hasPenalties && (
-                    <span className="bt2-pen">⚡ ركلات ترجيح {match.penaltyScore1} – {match.penaltyScore2}</span>
+                    <span className="bt2-pen"><Zap size={11} /> ركلات ترجيح {match.penaltyScore1} – {match.penaltyScore2}</span>
                 )}
                 {!done && dateStr && (
                     <span className="bt2-date-chip">{dateStr} • {timeStr}</span>
@@ -75,7 +76,7 @@ function MatchCard({ match, slotA, slotB, isChampionMatch }) {
             <div className={`bt2-slot ${isW2 ? 'bt2-slot-w' : ''} ${done && !isW2 ? 'bt2-slot-l' : ''}`}>
                 <div className="bt2-team">
                     <span className="bt2-tname">{t2}</span>
-                    {isW2 && <span className="bt2-crown-mini">👑</span>}
+                    {isW2 && <Crown size={13} className="bt2-crown-mini" />}
                 </div>
                 <span className={`bt2-sc ${isW2 ? 'bt2-sc-w' : ''}`}>{done ? match.score2 : ''}</span>
             </div>
@@ -95,11 +96,14 @@ function ChampionBanner({ match }) {
             <div className="bt2-champ-glow" />
             <div className="bt2-champ-glow bt2-champ-glow2" />
             <div className="bt2-champ-inner">
-                <div className="bt2-champ-crown">👑</div>
-                <div className="bt2-champ-av">{name[0]}</div>
+                <Trophy size={32} className="bt2-champ-trophy" />
                 <div className="bt2-champ-label">بطل البطولة</div>
                 <div className="bt2-champ-name">{name}</div>
-                <div className="bt2-champ-stars">⭐ ⭐ ⭐</div>
+                <div className="bt2-champ-stars">
+                    <Star size={14} fill="currentColor" />
+                    <Star size={14} fill="currentColor" />
+                    <Star size={14} fill="currentColor" />
+                </div>
             </div>
         </div>
     );
@@ -133,6 +137,24 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
     const hasChampion = finalMatch?.status === 'Completed' && getWinner(finalMatch);
     const qfSlotPairs = [[1, 2], [3, 4], [5, 6], [7, 8]];
 
+    // Derive QF winners → auto-populate SF placeholders
+    const qfWinners = useMemo(() => {
+        return qf.map(m => getWinner(m));
+    }, [qf]);
+
+    // SF: if no SF matches exist yet, show QF winners as placeholders (always 2 cards)
+    const sfDisplayMatches = useMemo(() => {
+        if (sf.length > 0) return sf;
+        // Always build 2 placeholder pairs from QF winners: [winner0 vs winner1], [winner2 vs winner3]
+        const placeholders = [];
+        for (let i = 0; i < 4; i += 2) {
+            const w1 = qfWinners[i] || null;
+            const w2 = qfWinners[i + 1] || null;
+            placeholders.push({ _placeholder: true, team1: w1, team2: w2 });
+        }
+        return placeholders;
+    }, [sf, qfWinners]);
+
     // Auto-detect active round on mount
     useEffect(() => {
         if (final.length > 0 && final.some(m => m.status !== 'Completed' || getWinner(m))) setActiveTab(2);
@@ -140,7 +162,6 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
         else setActiveTab(0);
     }, [qf, sf, final]);
 
-    // Tab click → smooth scroll to round
     const scrollToRound = useCallback((index) => {
         const el = roundRefs.current[index];
         const container = scrollRef.current;
@@ -158,7 +179,6 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
         setTimeout(() => { tabClickRef.current = false; }, 700);
     }, []);
 
-    // Scroll → tab sync (rAF-debounced)
     useEffect(() => {
         const container = scrollRef.current;
         if (!container) return;
@@ -197,7 +217,7 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
         <div className="bt2-root">
             {hasChampion && <ChampionBanner match={finalMatch} />}
 
-            {/* Sticky Tabs */}
+            {/* Sticky Tabs — no icons */}
             <div className="bt2-tabs-bar">
                 <div className="bt2-tabs">
                     {ROUNDS.map((r, i) => {
@@ -209,7 +229,6 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
                                 className={`bt2-tab ${active ? 'bt2-tab-active' : ''}`}
                                 onClick={() => scrollToRound(i)}
                             >
-                                <span className="bt2-tab-icon">{r.icon}</span>
                                 <span className="bt2-tab-label">{r.label}</span>
                                 {count > 0 && (
                                     <span className={`bt2-tab-count ${active ? 'bt2-tab-count-active' : ''}`}>
@@ -228,7 +247,7 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
                 <div className="bt2-round" ref={setRoundRef(0)} data-round-index="0">
                     <div className="bt2-round-title">ربع النهائي</div>
                     <div className="bt2-round-cards">
-                        {qf.length > 0 ? qf.map((m, i) => (
+                        {qf.length > 0 ? qf.map((m) => (
                             <div key={m._id} className="bt2-card-anchor">
                                 <MatchCard match={m} />
                             </div>
@@ -244,13 +263,20 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
                     </div>
                 </div>
 
-                {/* Semi-Finals */}
+                {/* Semi-Finals — auto-populated with QF winners */}
                 <div className="bt2-round bt2-round-sf" ref={setRoundRef(1)} data-round-index="1">
                     <div className="bt2-round-title">نصف النهائي</div>
                     <div className="bt2-round-cards bt2-round-cards-sf">
-                        {sf.length > 0 ? sf.map((m, i) => (
-                            <div key={m._id} className="bt2-card-anchor">
-                                <MatchCard match={m} />
+                        {sfDisplayMatches.length > 0 ? sfDisplayMatches.map((m, i) => (
+                            <div key={m._id || `sf-ph-${i}`} className="bt2-card-anchor">
+                                {m._placeholder ? (
+                                    <MatchCard
+                                        slotA={m.team1 ? { team: m.team1 } : null}
+                                        slotB={m.team2 ? { team: m.team2 } : null}
+                                    />
+                                ) : (
+                                    <MatchCard match={m} />
+                                )}
                             </div>
                         )) : Array.from({ length: 2 }).map((_, i) => (
                             <div key={i} className="bt2-card-anchor">
@@ -262,7 +288,7 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
 
                 {/* Final */}
                 <div className="bt2-round bt2-round-final" ref={setRoundRef(2)} data-round-index="2">
-                    <div className="bt2-round-title">🏆 النهائي</div>
+                    <div className="bt2-round-title"><Trophy size={14} /> النهائي</div>
                     <div className="bt2-round-cards bt2-round-cards-final">
                         <div className="bt2-card-anchor">
                             <MatchCard match={finalMatch} isChampionMatch />
@@ -270,7 +296,7 @@ export default function BracketTree({ knockoutMatches = [], bracketSlots = [] })
                         {thirdPlace && (
                             <div className="bt2-third">
                                 <div className="bt2-third-label">
-                                    <span className="bt2-third-icon">🥉</span>
+                                    <Medal size={16} />
                                     مباراة تحديد المركز الثالث
                                 </div>
                                 <MatchCard match={thirdPlace} />
