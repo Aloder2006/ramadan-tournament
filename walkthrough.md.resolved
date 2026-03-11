@@ -1,0 +1,86 @@
+# Walkthrough — Ramadan Tournament Improvements
+
+## Build Verification ✅
+- **1764 modules** transformed, **0 errors**
+- Lazy-loaded chunks confirmed: `AdminLogin-Do39pv9i.js` (1.6 kB) and `AdminPage-i08yiCOl.js` (74.7 kB)
+- CSS: 66.83 kB (gzip 11.4 kB)
+
+---
+
+## A. Security Fixes
+
+### 1–2. JWT Auth Middleware
+- **[NEW]** [auth.js](file:///d:/Ramadan-matchs/server/middleware/auth.js) — [verifyAdmin](file:///d:/Ramadan-matchs/server/middleware/auth.js#5-24) middleware validates JWT from `Authorization: Bearer <token>`
+- **[MODIFIED]** [auth.js](file:///d:/Ramadan-matchs/server/routes/auth.js) — Login now returns a signed JWT (24h expiry) instead of static string
+- **[MODIFIED]** [teams.js](file:///d:/Ramadan-matchs/server/routes/teams.js), [matches.js](file:///d:/Ramadan-matchs/server/routes/matches.js), [settings.js](file:///d:/Ramadan-matchs/server/routes/settings.js) — All POST/PUT/DELETE routes now require [verifyAdmin](file:///d:/Ramadan-matchs/server/middleware/auth.js#5-24)
+- **[MODIFIED]** [api.js](file:///d:/Ramadan-matchs/client/src/services/api.js) — Sends `Authorization: Bearer <token>` on all admin requests
+
+### 3. Visit Rate Limiting
+- **[NEW]** [rateLimitVisit](file:///d:/Ramadan-matchs/server/middleware/auth.js#32-52) middleware in [auth.js](file:///d:/Ramadan-matchs/server/middleware/auth.js) — IP-based, 1 visit per hour, auto-cleanup
+
+---
+
+## B. Code Quality
+
+### 4. Centralized API Error Handling
+- **[MODIFIED]** [api.js](file:///d:/Ramadan-matchs/client/src/services/api.js) — Single [request()](file:///d:/Ramadan-matchs/client/src/services/api.js#17-27) helper checks `r.ok`, throws on 4xx/5xx
+
+### 5. Dead Code Removal
+- Removed `isToday` field from [Match.js](file:///d:/Ramadan-matchs/server/models/Match.js)
+- Removed 3 legacy routes: `toggle-today`, `PATCH date`, `PUT result`
+- Removed 3 client functions: `toggleToday`, `updateMatchDate`, `saveResult`
+
+### 6. Extracted GROUPS Constant
+- **[MODIFIED]** [MatchesManager.jsx](file:///d:/Ramadan-matchs/client/src/components/MatchesManager.jsx) — Now imports from [tournament.config.js](file:///d:/Ramadan-matchs/client/src/tournament.config.js)
+
+### 7–8. Inline Styles → CSS Classes
+- **[REWRITTEN]** [GroupTable.jsx](file:///d:/Ramadan-matchs/client/src/components/GroupTable.jsx) — `gt-*` classes, removed `<style jsx>`
+- **[REWRITTEN]** [MatchesSection.jsx](file:///d:/Ramadan-matchs/client/src/components/MatchesSection.jsx) — `msc-*` classes
+- **[REWRITTEN]** [MatchHistory.jsx](file:///d:/Ramadan-matchs/client/src/components/MatchHistory.jsx) — `mh-*` classes
+- **[REWRITTEN]** [HomePage.jsx](file:///d:/Ramadan-matchs/client/src/pages/HomePage.jsx) — `hp-*` classes
+
+---
+
+## C. Design Enhancements
+
+| # | Feature | Implementation |
+|---|---------|---------------|
+| 9 | **Site footer** | Added to [HomePage.jsx](file:///d:/Ramadan-matchs/client/src/pages/HomePage.jsx) with tournament name, subtitle, copyright |
+| 10 | **Page transitions** | `page-fade-in` class with `fadeSlideIn` keyframe animation |
+| 11 | **Skeleton loading** | [SkeletonLoader](file:///d:/Ramadan-matchs/client/src/pages/HomePage.jsx#17-33) component with shimmer animation during initial data fetch |
+| 12 | **Mobile admin nav** | CSS media queries `@600px` and `@380px` for responsive tab sizing |
+| 13 | **Team avatars** | First-letter avatar in bracket tree and champion banner |
+
+---
+
+## D. Performance & UX
+
+| # | Feature | Implementation |
+|---|---------|---------------|
+| 14 | **Auto-refresh** | `setInterval` polls every 60s for updated match data |
+| 15 | **Stale-while-revalidate** | Background refresh doesn't reset loading state — users see stale data while new data loads |
+| 16 | **CSS organization** | Added 800+ lines of modular, namespaced CSS (gt-*, msc-*, mh-*, hp-*) |
+| 17 | **Lazy loading** | `React.lazy()` for [AdminPage](file:///d:/Ramadan-matchs/client/src/pages/AdminPage.jsx#354-569) + [AdminLogin](file:///d:/Ramadan-matchs/client/src/pages/AdminLogin.jsx#4-86) — separate chunks |
+| 18 | **Dynamic SEO** | [useDocumentTitle](file:///d:/Ramadan-matchs/client/src/pages/HomePage.jsx#10-16) hook updates `<title>` based on tournament name and phase |
+
+---
+
+## Files Changed
+
+| File | Action |
+|------|--------|
+| [server/middleware/auth.js](file:///d:/Ramadan-matchs/server/middleware/auth.js) | **NEW** |
+| [server/routes/auth.js](file:///d:/Ramadan-matchs/server/routes/auth.js) | Rewritten (JWT) |
+| [server/routes/teams.js](file:///d:/Ramadan-matchs/server/routes/teams.js) | Modified (auth middleware) |
+| [server/routes/matches.js](file:///d:/Ramadan-matchs/server/routes/matches.js) | Modified (auth + dead code removal) |
+| [server/routes/settings.js](file:///d:/Ramadan-matchs/server/routes/settings.js) | Modified (auth + rate limiting) |
+| [server/models/Match.js](file:///d:/Ramadan-matchs/server/models/Match.js) | Modified (removed isToday) |
+| [server/.env](file:///d:/Ramadan-matchs/server/.env) | Modified (added JWT_SECRET) |
+| [client/src/services/api.js](file:///d:/Ramadan-matchs/client/src/services/api.js) | Rewritten |
+| [client/src/App.jsx](file:///d:/Ramadan-matchs/client/src/App.jsx) | Rewritten (lazy loading) |
+| [client/src/pages/HomePage.jsx](file:///d:/Ramadan-matchs/client/src/pages/HomePage.jsx) | Rewritten (CSS + auto-refresh + skeleton + SEO) |
+| [client/src/components/GroupTable.jsx](file:///d:/Ramadan-matchs/client/src/components/GroupTable.jsx) | Rewritten (CSS) |
+| [client/src/components/MatchesSection.jsx](file:///d:/Ramadan-matchs/client/src/components/MatchesSection.jsx) | Rewritten (CSS) |
+| [client/src/components/MatchHistory.jsx](file:///d:/Ramadan-matchs/client/src/components/MatchHistory.jsx) | Rewritten (CSS) |
+| [client/src/components/MatchesManager.jsx](file:///d:/Ramadan-matchs/client/src/components/MatchesManager.jsx) | Modified (config import) |
+| [client/src/index.css](file:///d:/Ramadan-matchs/client/src/index.css) | Extended (+800 lines) |

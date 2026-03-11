@@ -23,7 +23,6 @@ const matchSchema = new mongoose.Schema(
         score2: { type: Number, default: null },
         redCards1: { type: Number, default: 0 },
         redCards2: { type: Number, default: 0 },
-        isToday: { type: Boolean, default: false },
         matchDate: { type: Date, default: null },
         knockoutRound: { type: String, default: null },
         bracketPosition: { type: Number, default: null }, // 1-4 QF, 1-2 SF, 1 Final/3rd

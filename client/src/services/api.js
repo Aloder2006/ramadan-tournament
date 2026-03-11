@@ -1,64 +1,81 @@
-// All paths relative — Vite proxy /api → Express :5000
+/**
+ * API Service — centralized fetch with error handling and JWT auth
+ */
 
-// --- Auth ---
+// ── Helpers ────────────────────────────────────────────────────
+function getToken() {
+    return sessionStorage.getItem('adminToken') || '';
+}
+
+function authHeaders() {
+    const token = getToken();
+    const h = { 'Content-Type': 'application/json' };
+    if (token) h['Authorization'] = `Bearer ${token}`;
+    return h;
+}
+
+async function request(url, options = {}) {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.message || `HTTP ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return res.json();
+}
+
+// ── Auth ───────────────────────────────────────────────────────
 export const adminLogin = (password) =>
-    fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }).then(r => r.json());
+    request('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
 
-// --- Teams ---
-export const getTeams = () => fetch('/api/teams').then(r => r.json());
+// ── Teams ──────────────────────────────────────────────────────
+export const getTeams = () => request('/api/teams');
 export const createTeam = (data) =>
-    fetch('/api/teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    request('/api/teams', { method: 'POST', headers: authHeaders(), body: JSON.stringify(data) });
 export const updateTeam = (id, data) =>
-    fetch(`/api/teams/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-export const deleteTeam = (id) => fetch(`/api/teams/${id}`, { method: 'DELETE' }).then(r => r.json());
+    request(`/api/teams/${id}`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data) });
+export const deleteTeam = (id) =>
+    request(`/api/teams/${id}`, { method: 'DELETE', headers: authHeaders() });
 
-// --- Matches ---
+// ── Matches ────────────────────────────────────────────────────
 export const getMatches = (phase) =>
-    fetch(`/api/matches${phase ? `?phase=${phase}` : ''}`).then(r => r.json());
-export const getTodayMatches = () => fetch('/api/matches/today').then(r => r.json());
-export const getTomorrowMatches = () => fetch('/api/matches/tomorrow').then(r => r.json());
-export const getMatchHistory = () => fetch('/api/matches/history').then(r => r.json());
+    request(`/api/matches${phase ? `?phase=${phase}` : ''}`);
+export const getTodayMatches = () => request('/api/matches/today');
+export const getTomorrowMatches = () => request('/api/matches/tomorrow');
+export const getMatchHistory = () => request('/api/matches/history');
 export const createMatch = (data) =>
-    fetch('/api/matches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-
-// Unified match update — handles date, result, red cards, etc. in one call
+    request('/api/matches', { method: 'POST', headers: authHeaders(), body: JSON.stringify(data) });
 export const updateMatch = (id, data) =>
-    fetch(`/api/matches/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    request(`/api/matches/${id}`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data) });
+export const deleteMatch = (id) =>
+    request(`/api/matches/${id}`, { method: 'DELETE', headers: authHeaders() });
 
-export const toggleToday = (id) =>
-    fetch(`/api/matches/${id}/toggle-today`, { method: 'PATCH' }).then(r => r.json());
-export const updateMatchDate = (id, matchDate) =>
-    fetch(`/api/matches/${id}/date`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ matchDate }) }).then(r => r.json());
-export const saveResult = (id, score1, score2, redCards1 = 0, redCards2 = 0, penalties = null) =>
-    fetch(`/api/matches/${id}/result`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ score1, score2, redCards1, redCards2, ...(penalties || {}) }) }).then(r => r.json());
-
-export const deleteMatch = (id) => fetch(`/api/matches/${id}`, { method: 'DELETE' }).then(r => r.json());
-
-// --- Settings ---
-export const getSettings = () => fetch('/api/settings').then(r => r.json());
+// ── Settings ───────────────────────────────────────────────────
+export const getSettings = () => request('/api/settings');
 export const setPhase = (phase) =>
-    fetch('/api/settings/phase', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phase }) }).then(r => r.json());
+    request('/api/settings/phase', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ phase }) });
 export const setQualifiedTeams = (teamIds) =>
-    fetch('/api/settings/qualified', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamIds }) }).then(r => r.json());
+    request('/api/settings/qualified', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ teamIds }) });
 export const setBracketSlots = (slots) =>
-    fetch('/api/settings/bracket-slots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slots }) }).then(r => r.json());
+    request('/api/settings/bracket-slots', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ slots }) });
 export const setTournamentName = (name) =>
-    fetch('/api/settings/tournament-name', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }).then(r => r.json());
-
-// Update all tournament info fields (name, subtitle, logo, colors, fonts)
+    request('/api/settings/tournament-name', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ name }) });
 export const updateSettings = (data) =>
-    fetch('/api/settings/info', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    request('/api/settings/info', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data) });
 
 export const recordVisit = () =>
-    fetch('/api/settings/visit', { method: 'POST' }).then(r => r.json());
+    request('/api/settings/visit', { method: 'POST' });
 
-// --- Reset ---
-export const resetGroups = () => fetch('/api/settings/reset/groups', { method: 'DELETE' }).then(r => r.json());
-export const resetKnockout = () => fetch('/api/settings/reset/knockout', { method: 'DELETE' }).then(r => r.json());
-export const resetAll = () => fetch('/api/settings/reset/all', { method: 'DELETE' }).then(r => r.json());
+// ── Reset (admin) ──────────────────────────────────────────────
+export const resetGroups = () =>
+    request('/api/settings/reset/groups', { method: 'DELETE', headers: authHeaders() });
+export const resetKnockout = () =>
+    request('/api/settings/reset/knockout', { method: 'DELETE', headers: authHeaders() });
+export const resetAll = () =>
+    request('/api/settings/reset/all', { method: 'DELETE', headers: authHeaders() });
 
-// --- Knockout auto-generation ---
-export const getRankings = () => fetch('/api/settings/rankings').then(r => r.json());
+// ── Rankings / Knockout ────────────────────────────────────────
+export const getRankings = () => request('/api/settings/rankings');
 export const generateKnockout = () =>
-    fetch('/api/settings/generate-knockout', { method: 'POST' }).then(r => r.json());
-
+    request('/api/settings/generate-knockout', { method: 'POST', headers: authHeaders() });

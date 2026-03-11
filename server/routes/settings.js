@@ -3,6 +3,71 @@ const router = express.Router();
 const Settings = require('../models/Settings');
 const Match = require('../models/Match');
 const Team = require('../models/Team');
+const { verifyAdmin, rateLimitVisit } = require('../middleware/auth');
+
+// ── Shared: Group Ranking Engine ────────────────────────
+const GROUPS = ['أ', 'ب', 'ج', 'د'];
+
+async function computeRankings() {
+    const allTeams = await Team.find().lean();
+    const allMatches = await Match.find({ phase: { $ne: 'knockout' }, status: 'Completed' }).lean();
+
+    // Build H2H lookup
+    const h2h = {};
+    for (const m of allMatches) {
+        const t1 = m.team1.toString();
+        const t2 = m.team2.toString();
+        if (!h2h[t1]) h2h[t1] = {};
+        if (!h2h[t2]) h2h[t2] = {};
+        if (!h2h[t1][t2]) h2h[t1][t2] = { wins: 0, gf: 0, ga: 0 };
+        if (!h2h[t2][t1]) h2h[t2][t1] = { wins: 0, gf: 0, ga: 0 };
+        h2h[t1][t2].gf += m.score1; h2h[t1][t2].ga += m.score2;
+        h2h[t2][t1].gf += m.score2; h2h[t2][t1].ga += m.score1;
+        if (m.score1 > m.score2) h2h[t1][t2].wins++;
+        else if (m.score2 > m.score1) h2h[t2][t1].wins++;
+    }
+
+    const h2hWins = (a, b) => (h2h[a._id?.toString()]?.[b._id?.toString()]?.wins || 0);
+    const h2hGD = (a, b) => {
+        const r = h2h[a._id?.toString()]?.[b._id?.toString()];
+        return r ? r.gf - r.ga : 0;
+    };
+
+    const sortTeams = (teams) => {
+        teams.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            const gdDiff = (b.gf - b.ga) - (a.gf - a.ga);
+            if (gdDiff !== 0) return gdDiff;
+            const h2hW = h2hWins(b, a) - h2hWins(a, b);
+            if (h2hW !== 0) return h2hW;
+            const h2hGDiff = h2hGD(b, a) - h2hGD(a, b);
+            if (h2hGDiff !== 0) return h2hGDiff;
+            return b.gf - a.gf;
+        });
+        return teams;
+    };
+
+    const rankings = {};
+    for (const g of GROUPS) {
+        const teams = allTeams.filter(t => t.group === g);
+        sortTeams(teams);
+        rankings[g] = teams.map((t, i) => ({
+            _id: t._id, name: t.name, group: t.group,
+            points: t.points, gf: t.gf, ga: t.ga,
+            gd: t.gf - t.ga, played: t.played, rank: i + 1,
+        }));
+    }
+    return rankings;
+}
+
+// ── Color validation helper ─────────────────────────────
+function isValidHex(str) {
+    return !str || /^#[0-9A-Fa-f]{6}$/.test(str);
+}
+
+// ═══════════════════════════════════════════════════════
+// ROUTES
+// ═══════════════════════════════════════════════════════
 
 // GET /api/settings
 router.get('/', async (req, res) => {
@@ -15,7 +80,7 @@ router.get('/', async (req, res) => {
 });
 
 // PUT /api/settings/phase
-router.put('/phase', async (req, res) => {
+router.put('/phase', verifyAdmin, async (req, res) => {
     try {
         const { phase } = req.body;
         if (!['groups', 'knockout'].includes(phase))
@@ -28,7 +93,7 @@ router.put('/phase', async (req, res) => {
 });
 
 // PUT /api/settings/qualified
-router.put('/qualified', async (req, res) => {
+router.put('/qualified', verifyAdmin, async (req, res) => {
     try {
         const { teamIds } = req.body;
         if (!Array.isArray(teamIds))
@@ -42,7 +107,7 @@ router.put('/qualified', async (req, res) => {
 });
 
 // PUT /api/settings/bracket-slots — also auto-creates QF matches
-router.put('/bracket-slots', async (req, res) => {
+router.put('/bracket-slots', verifyAdmin, async (req, res) => {
     try {
         const { slots } = req.body;
         if (!Array.isArray(slots))
@@ -91,119 +156,32 @@ router.put('/bracket-slots', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// ────────────────────────────────────────────────────
 // GET /api/settings/rankings
-// Returns teams sorted per group: points → GD → H2H
-// ────────────────────────────────────────────────────
 router.get('/rankings', async (req, res) => {
     try {
-        const GROUPS = ['أ', 'ب', 'ج', 'د'];
-        const allTeams = await Team.find().lean();
-        const allMatches = await Match.find({ phase: { $ne: 'knockout' }, status: 'Completed' }).lean();
-
-        // Build H2H lookup: h2h[teamAId][teamBId] = { wins, gf, ga }
-        const h2h = {};
-        for (const m of allMatches) {
-            const t1 = m.team1.toString();
-            const t2 = m.team2.toString();
-            if (!h2h[t1]) h2h[t1] = {};
-            if (!h2h[t2]) h2h[t2] = {};
-            if (!h2h[t1][t2]) h2h[t1][t2] = { wins: 0, gf: 0, ga: 0 };
-            if (!h2h[t2][t1]) h2h[t2][t1] = { wins: 0, gf: 0, ga: 0 };
-            h2h[t1][t2].gf += m.score1; h2h[t1][t2].ga += m.score2;
-            h2h[t2][t1].gf += m.score2; h2h[t2][t1].ga += m.score1;
-            if (m.score1 > m.score2) h2h[t1][t2].wins++;
-            else if (m.score2 > m.score1) h2h[t2][t1].wins++;
-        }
-
-        const h2hWins = (a, b) => (h2h[a._id?.toString()]?.[b._id?.toString()]?.wins || 0);
-        const h2hGD = (a, b) => {
-            const r = h2h[a._id?.toString()]?.[b._id?.toString()];
-            return r ? r.gf - r.ga : 0;
-        };
-
-        const rankings = {};
-        for (const g of GROUPS) {
-            const teams = allTeams.filter(t => t.group === g);
-            teams.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                const gdDiff = (b.gf - b.ga) - (a.gf - a.ga);
-                if (gdDiff !== 0) return gdDiff;
-                // Head-to-head
-                const h2hW = h2hWins(b, a) - h2hWins(a, b);
-                if (h2hW !== 0) return h2hW;
-                const h2hGDiff = h2hGD(b, a) - h2hGD(a, b);
-                if (h2hGDiff !== 0) return h2hGDiff;
-                return (b.gf - a.gf); // Most goals scored
-            });
-            rankings[g] = teams.map((t, i) => ({
-                _id: t._id, name: t.name, group: t.group,
-                points: t.points, gf: t.gf, ga: t.ga,
-                gd: t.gf - t.ga, played: t.played,
-                rank: i + 1,
-            }));
-        }
+        const rankings = await computeRankings();
         res.json(rankings);
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// ────────────────────────────────────────────────────
 // POST /api/settings/generate-knockout
-// Ranks groups, applies scissors seeding, creates 4 QF matches
-// ────────────────────────────────────────────────────
-router.post('/generate-knockout', async (req, res) => {
+router.post('/generate-knockout', verifyAdmin, async (req, res) => {
     try {
-        const GROUPS = ['أ', 'ب', 'ج', 'د'];
-        const allTeams = await Team.find().lean();
-        const allMatches = await Match.find({ phase: { $ne: 'knockout' }, status: 'Completed' }).lean();
+        const rankings = await computeRankings();
 
-        // ── H2H lookup ──
-        const h2h = {};
-        for (const m of allMatches) {
-            const t1 = m.team1.toString();
-            const t2 = m.team2.toString();
-            if (!h2h[t1]) h2h[t1] = {};
-            if (!h2h[t2]) h2h[t2] = {};
-            if (!h2h[t1][t2]) h2h[t1][t2] = { wins: 0, gf: 0, ga: 0 };
-            if (!h2h[t2][t1]) h2h[t2][t1] = { wins: 0, gf: 0, ga: 0 };
-            h2h[t1][t2].gf += m.score1; h2h[t1][t2].ga += m.score2;
-            h2h[t2][t1].gf += m.score2; h2h[t2][t1].ga += m.score1;
-            if (m.score1 > m.score2) h2h[t1][t2].wins++;
-            else if (m.score2 > m.score1) h2h[t2][t1].wins++;
-        }
-
-        const h2hWins = (a, b) => (h2h[a._id?.toString()]?.[b._id?.toString()]?.wins || 0);
-        const h2hGD = (a, b) => {
-            const r = h2h[a._id?.toString()]?.[b._id?.toString()];
-            return r ? r.gf - r.ga : 0;
-        };
-
-        // ── Sort each group ──
-        const sorted = {};
+        // Validate groups have enough teams
         for (const g of GROUPS) {
-            const teams = allTeams.filter(t => t.group === g);
-            if (!teams.length) return res.status(400).json({
-                message: `المجموعة «${g}» لا تحتوي على فرق. يرجى إضافة الفرق أولاً.`
-            });
-            teams.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                const gdDiff = (b.gf - b.ga) - (a.gf - a.ga);
-                if (gdDiff !== 0) return gdDiff;
-                const h2hW = h2hWins(b, a) - h2hWins(a, b);
-                if (h2hW !== 0) return h2hW;
-                const h2hGDiff = h2hGD(b, a) - h2hGD(a, b);
-                if (h2hGDiff !== 0) return h2hGDiff;
-                return b.gf - a.gf;
-            });
-            sorted[g] = teams;
+            if (!rankings[g] || rankings[g].length < 2) {
+                return res.status(400).json({
+                    message: `المجموعة «${g}» لا تحتوي على فريقين كافيين لإنشاء القرعة`
+                });
+            }
         }
 
-        // ── Scissors seeding ──
-        // QF1: 1st(A) vs 2nd(B), QF2: 1st(C) vs 2nd(D)
-        // QF3: 1st(B) vs 2nd(A), QF4: 1st(D) vs 2nd(C)
-        const first = (g) => sorted[g]?.[0];
-        const second = (g) => sorted[g]?.[1];
+        const first = (g) => rankings[g][0];
+        const second = (g) => rankings[g][1];
 
+        // Scissors seeding
         const seeding = [
             { t1: first('أ'), t2: second('ب'), pos: 1 },
             { t1: first('ج'), t2: second('د'), pos: 2 },
@@ -211,21 +189,19 @@ router.post('/generate-knockout', async (req, res) => {
             { t1: first('د'), t2: second('ج'), pos: 4 },
         ];
 
-        // Validate all 8 teams exist
         for (const s of seeding) {
             if (!s.t1 || !s.t2) return res.status(400).json({
                 message: 'لا يوجد فريقان كافيان في إحدى المجموعات لإنشاء القرعة'
             });
         }
 
-        // ── Delete old KO matches & reset slots ──
+        // Delete old KO matches & reset slots
         await Match.deleteMany({ phase: 'knockout' });
 
         const settings = await Settings.getSettings();
         settings.phase = 'knockout';
         settings.qualifiedTeams = seeding.flatMap(s => [s.t1._id, s.t2._id]);
         settings.bracketSlots = [
-            // Slot pairs per QF: slot 2i-1 = team1, slot 2i = team2
             { position: 1, team: seeding[0].t1._id },
             { position: 2, team: seeding[0].t2._id },
             { position: 3, team: seeding[1].t1._id },
@@ -237,8 +213,8 @@ router.post('/generate-knockout', async (req, res) => {
         ];
         await settings.save();
 
-        // ── Create 4 QF matches ──
-        const qfMatches = await Match.insertMany(seeding.map(s => ({
+        // Create 4 QF matches
+        await Match.insertMany(seeding.map(s => ({
             team1: s.t1._id,
             team2: s.t2._id,
             group: 'knockout',
@@ -248,13 +224,12 @@ router.post('/generate-knockout', async (req, res) => {
             status: 'Pending',
         })));
 
-        // Populate response
         await settings.populate('bracketSlots.team', 'name group');
         await settings.populate('qualifiedTeams', 'name group points');
 
         res.json({
             message: '✅ تم توليد ربع النهائي بنجاح',
-            bracket: seeding.map((s, i) => ({
+            bracket: seeding.map(s => ({
                 position: s.pos,
                 team1: { name: s.t1.name, group: s.t1.group },
                 team2: { name: s.t2.name, group: s.t2.group },
@@ -264,10 +239,11 @@ router.post('/generate-knockout', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-
-router.put('/tournament-name', async (req, res) => {
+// PUT /api/settings/tournament-name
+router.put('/tournament-name', verifyAdmin, async (req, res) => {
     try {
         const { name } = req.body;
+        if (name && name.length > 80) return res.status(400).json({ message: 'الاسم طويل جدًا' });
         const settings = await Settings.getSettings();
         settings.tournamentName = name || 'دوري رمضان';
         await settings.save();
@@ -276,7 +252,7 @@ router.put('/tournament-name', async (req, res) => {
 });
 
 // PUT /api/settings/info — update all tournament identity + color + font fields
-router.put('/info', async (req, res) => {
+router.put('/info', verifyAdmin, async (req, res) => {
     try {
         const {
             tournamentName, subtitle, logoEmoji,
@@ -285,6 +261,20 @@ router.put('/info', async (req, res) => {
             colorTextPrimary, colorSuccess, colorDanger, colorIndigo,
             logoFont, bodyFont,
         } = req.body;
+
+        // Validate colors
+        const colors = { primaryColor, secondaryColor, colorBgBase, colorBgCard, colorBorder, colorTextPrimary, colorSuccess, colorDanger, colorIndigo };
+        for (const [key, val] of Object.entries(colors)) {
+            if (val !== undefined && !isValidHex(val)) {
+                return res.status(400).json({ message: `لون غير صالح: ${key}` });
+            }
+        }
+
+        // Validate string lengths
+        if (tournamentName !== undefined && tournamentName.length > 80) return res.status(400).json({ message: 'اسم البطولة طويل جدًا' });
+        if (subtitle !== undefined && subtitle.length > 100) return res.status(400).json({ message: 'النص الفرعي طويل جدًا' });
+        if (logoEmoji !== undefined && logoEmoji.length > 8) return res.status(400).json({ message: 'الشعار طويل جدًا' });
+
         const settings = await Settings.getSettings();
         if (tournamentName !== undefined) settings.tournamentName = tournamentName || 'دوري رمضان';
         if (subtitle !== undefined) settings.subtitle = subtitle;
@@ -305,8 +295,8 @@ router.put('/info', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// POST /api/settings/visit — increment the absolute visitors counter
-router.post('/visit', async (req, res) => {
+// POST /api/settings/visit
+router.post('/visit', rateLimitVisit, async (req, res) => {
     try {
         const settings = await Settings.getSettings();
         settings.visitorsCount = (settings.visitorsCount || 0) + 1;
@@ -315,53 +305,46 @@ router.post('/visit', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// ════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // RESET ROUTES
-// ════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
 // DELETE /api/settings/reset/groups
-// Deletes all group-stage matches and resets all team stats to zero
-router.delete('/reset/groups', async (req, res) => {
+router.delete('/reset/groups', verifyAdmin, async (req, res) => {
     try {
         await Match.deleteMany({ phase: { $ne: 'knockout' } });
         await Team.updateMany({}, {
             $set: { played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, points: 0 }
         });
-        res.json({ message: '✅ تم إعادة تعيين دور المجموعات — حُذفت جميع مباريات المجموعات وأُعيدت إحصائيات الفرق' });
+        res.json({ message: '✅ تم إعادة تعيين دور المجموعات' });
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 // DELETE /api/settings/reset/knockout
-// Deletes all KO matches, clears bracket + qualified teams + resets phase to groups
-router.delete('/reset/knockout', async (req, res) => {
+router.delete('/reset/knockout', verifyAdmin, async (req, res) => {
     try {
         await Match.deleteMany({ phase: 'knockout' });
-
         const settings = await Settings.getSettings();
         settings.qualifiedTeams = [];
         settings.bracketSlots = Array.from({ length: 8 }, (_, i) => ({ position: i + 1, team: null }));
         settings.phase = 'groups';
         await settings.save();
-
-        res.json({ message: '✅ تم إعادة تعيين دور الإقصاء — حُذفت مباريات الإقصاء وأُفرغت القرعة' });
+        res.json({ message: '✅ تم إعادة تعيين دور الإقصاء' });
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 // DELETE /api/settings/reset/all
-// Full reset — deletes ALL matches, ALL teams, resets settings completely
-router.delete('/reset/all', async (req, res) => {
+router.delete('/reset/all', verifyAdmin, async (req, res) => {
     try {
         await Match.deleteMany({});
         await Team.deleteMany({});
-
         const settings = await Settings.getSettings();
         settings.qualifiedTeams = [];
         settings.bracketSlots = Array.from({ length: 8 }, (_, i) => ({ position: i + 1, team: null }));
         settings.phase = 'groups';
         settings.tournamentName = 'دوري رمضان';
         await settings.save();
-
-        res.json({ message: '✅ تم إعادة تعيين البطولة بالكامل — حُذفت جميع الفرق والمباريات' });
+        res.json({ message: '✅ تم إعادة تعيين البطولة بالكامل' });
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 

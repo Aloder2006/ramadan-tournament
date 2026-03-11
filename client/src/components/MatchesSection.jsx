@@ -15,56 +15,34 @@ function MatchCard({ m }) {
     const badge = m.phase === 'knockout' ? (m.knockoutRound || 'إقصاء') : (m.group ? `م·${m.group}` : '');
 
     return (
-        <div style={{
-            background: 'linear-gradient(145deg, var(--bg-card), var(--bg-elevated))',
-            borderRadius: '12px',
-            border: '1px solid var(--border-light)',
-            padding: '0.75rem 0.85rem',
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center',
-            gap: '0.6rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-            cursor: 'pointer',
-            WebkitTapHighlightColor: 'transparent',
-            outline: 'none',
-        }}>
-            <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-                <span style={{
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)', fontWeight: w1 ? 900 : 600,
-                    color: w1 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    fontFamily: 'Cairo, sans-serif'
-                }}>{m.team1?.name || 'فريق 1'}</span>
+        <div className="msc-card">
+            <div className="msc-team msc-team-start">
+                <span className={`msc-team-name ${w1 ? 'msc-winner' : ''}`}>
+                    {m.team1?.name || 'فريق 1'}
+                </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                {badge && <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'var(--gold)' }}>{badge}</span>}
-                
-                <div style={{
-                    background: 'var(--bg-base)', padding: '4px 10px', borderRadius: '6px',
-                    border: '1px solid var(--border)', minWidth: '70px', textAlign: 'center'
-                }}>
+            <div className="msc-center">
+                {badge && <span className="msc-badge">{badge}</span>}
+
+                <div className="msc-score-box">
                     {done ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
-                            <span style={{ fontSize: '1rem', fontWeight: 900, color: w1 ? 'var(--gold)' : 'var(--text-primary)' }}>{m.score1}</span>
-                            <span style={{ color: 'var(--text-muted)' }}>:</span>
-                            <span style={{ fontSize: '1rem', fontWeight: 900, color: w2 ? 'var(--gold)' : 'var(--text-primary)' }}>{m.score2}</span>
+                        <div className="msc-score-inner">
+                            <span className={`msc-score ${w1 ? 'msc-score-gold' : ''}`}>{m.score1}</span>
+                            <span className="msc-score-sep">:</span>
+                            <span className={`msc-score ${w2 ? 'msc-score-gold' : ''}`}>{m.score2}</span>
                         </div>
                     ) : (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--gold)' }}>{timeStr || 'لم يحدد'}</span>
+                        <span className="msc-time">{timeStr || 'لم يحدد'}</span>
                     )}
                 </div>
-                {!done && <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800 }}>VS</span>}
+                {!done && <span className="msc-vs">VS</span>}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'row-reverse', minWidth: 0 }}>
-                <span style={{
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)', fontWeight: w2 ? 900 : 600,
-                    color: w2 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left',
-                    fontFamily: 'Cairo, sans-serif'
-                }}>{m.team2?.name || 'فريق 2'}</span>
+            <div className="msc-team msc-team-end">
+                <span className={`msc-team-name ${w2 ? 'msc-winner' : ''}`}>
+                    {m.team2?.name || 'فريق 2'}
+                </span>
             </div>
         </div>
     );
@@ -76,13 +54,11 @@ function MatchCard({ m }) {
 export default function MatchesSection({ todayMatches = [], tomorrowMatches = [] }) {
     const safeToday = Array.isArray(todayMatches) ? todayMatches : [];
     const safeTomorrow = Array.isArray(tomorrowMatches) ? tomorrowMatches : [];
-    
+
     const initialTab = safeToday.length > 0 ? 'today' : (safeTomorrow.length > 0 ? 'tomorrow' : 'today');
     const [tab, setTab] = useState(initialTab);
-    
-    // للتحكم في الأنيميشن الخاص بالصندوق
     const [showHint, setShowHint] = useState(false);
-    
+
     const scrollContainerRef = useRef(null);
     const todayPanelRef = useRef(null);
     const tomorrowPanelRef = useRef(null);
@@ -91,7 +67,7 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
         if (typeof window !== 'undefined') {
             const hasSwiped = localStorage.getItem('hasSwipedMatches');
             if (!hasSwiped && safeTomorrow.length > 0 && safeToday.length > 0) {
-                const timer = setTimeout(() => setShowHint(true), 1200); 
+                const timer = setTimeout(() => setShowHint(true), 1200);
                 return () => clearTimeout(timer);
             }
         }
@@ -113,158 +89,80 @@ export default function MatchesSection({ todayMatches = [], tomorrowMatches = []
     };
 
     const handleScroll = () => {
-        dismissHint(); // إيقاف الأنيميشن فوراً إذا مرر المستخدم الشاشة
+        dismissHint();
         if (!scrollContainerRef.current || !todayPanelRef.current || !tomorrowPanelRef.current) return;
-        
+
         const container = scrollContainerRef.current;
         const containerRect = container.getBoundingClientRect();
         const containerCenter = containerRect.left + (containerRect.width / 2);
-        
+
         const todayRect = todayPanelRef.current.getBoundingClientRect();
         const tomorrowRect = tomorrowPanelRef.current.getBoundingClientRect();
-        
+
         const todayDist = Math.abs(todayRect.left + (todayRect.width / 2) - containerCenter);
         const tomorrowDist = Math.abs(tomorrowRect.left + (tomorrowRect.width / 2) - containerCenter);
-        
+
         const activeTab = todayDist < tomorrowDist ? 'today' : 'tomorrow';
-        
-        if (tab !== activeTab) {
-            setTab(activeTab);
-        }
+        if (tab !== activeTab) setTab(activeTab);
     };
 
     const scrollToTab = (t) => {
         dismissHint();
         setTab(t);
-        
         const targetPanel = t === 'today' ? todayPanelRef.current : tomorrowPanelRef.current;
         if (targetPanel) {
-            targetPanel.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'nearest', 
-                inline: 'center' 
-            });
+            targetPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
     };
 
     return (
-        <section style={{ background: 'var(--bg-base)', padding: '1rem 0 1.5rem', position: 'relative' }}>
+        <section className="msc-section">
             {/* Header & Tabs */}
-            <div style={{ padding: '0 1rem 0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-                <h3 style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)' }}>
-                    مباريات الجولة
-                </h3>
-                
-                <div style={{
-                    display: 'flex', background: 'var(--bg-elevated)', borderRadius: '100px',
-                    padding: '4px', border: '1px solid var(--border)', width: '100%', maxWidth: '260px', position: 'relative',
-                    WebkitTapHighlightColor: 'transparent',
-                }}>
-                    <div style={{
-                        position: 'absolute', width: 'calc(50% - 4px)', top: '4px', bottom: '4px',
-                        right: tab === 'today' ? '4px' : 'calc(50%)',
-                        background: 'var(--bg-card)', borderRadius: '100px', 
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.08)', transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }} />
+            <div className="msc-header">
+                <h3 className="msc-title">مباريات الجولة</h3>
 
-                    <button onClick={() => scrollToTab('today')} style={tabBtn(tab === 'today')}>
-                        اليوم <span style={countBadge(tab === 'today')}>{safeToday.length}</span>
+                <div className="msc-tab-bar">
+                    <div className={`msc-tab-indicator ${tab === 'tomorrow' ? 'msc-tab-indicator-right' : ''}`} />
+
+                    <button onClick={() => scrollToTab('today')} className={`msc-tab-btn ${tab === 'today' ? 'msc-tab-active' : ''}`}>
+                        اليوم <span className={`msc-tab-count ${tab === 'today' ? 'msc-tab-count-active' : ''}`}>{safeToday.length}</span>
                     </button>
-                    <button onClick={() => scrollToTab('tomorrow')} style={tabBtn(tab === 'tomorrow')}>
-                        الغد <span style={countBadge(tab === 'tomorrow')}>{safeTomorrow.length}</span>
+                    <button onClick={() => scrollToTab('tomorrow')} className={`msc-tab-btn ${tab === 'tomorrow' ? 'msc-tab-active' : ''}`}>
+                        الغد <span className={`msc-tab-count ${tab === 'tomorrow' ? 'msc-tab-count-active' : ''}`}>{safeTomorrow.length}</span>
                     </button>
                 </div>
             </div>
 
-            {/* تم إضافة overflow: hidden للحاوية الخارجية لمنع ظهور شريط تمرير بالصفحة أثناء حركة الأنيميشن، 
-               مع الحفاظ على مسافة للـ Shadows 
-            */}
-            <div style={{ position: 'relative', overflowX: 'hidden', paddingBottom: '1rem' }}>
-                <div 
-                    ref={scrollContainerRef} 
-                    className={showHint ? 'peek-scroll-anim' : ''} // تطبيق كلاس الأنيميشن هنا
-                    onScroll={handleScroll} 
-                    onTouchStart={dismissHint} 
+            {/* Scroll panels */}
+            <div className="msc-scroll-outer">
+                <div
+                    ref={scrollContainerRef}
+                    className={`msc-scroll-inner ${showHint ? 'peek-scroll-anim' : ''}`}
+                    onScroll={handleScroll}
+                    onTouchStart={dismissHint}
                     onMouseDown={dismissHint}
-                    style={{
-                        display: 'flex', 
-                        overflowX: 'auto', 
-                        scrollSnapType: 'x mandatory',
-                        WebkitOverflowScrolling: 'touch', 
-                        scrollbarWidth: 'none', 
-                        direction: 'rtl',
-                        overscrollBehaviorX: 'contain',
-                        // إضافة Transition ناعم في حال تم إيقاف الأنيميشن ليعود لمكانه بهدوء
-                        transition: 'transform 0.3s ease-out'
-                    }}
                 >
                     {/* Today Panel */}
-                    <div ref={todayPanelRef} style={panelStyle}>
-                        <div style={listWrapper}>
+                    <div ref={todayPanelRef} className="msc-panel">
+                        <div className="msc-list">
                             {safeToday.length === 0 ? <EmptyState text="لا توجد مباريات اليوم" /> :
-                            safeToday.map(m => <MatchCard key={m._id} m={m} />)}
+                                safeToday.map(m => <MatchCard key={m._id} m={m} />)}
                         </div>
                     </div>
 
                     {/* Tomorrow Panel */}
-                    <div ref={tomorrowPanelRef} style={panelStyle}>
-                        <div style={listWrapper}>
+                    <div ref={tomorrowPanelRef} className="msc-panel">
+                        <div className="msc-list">
                             {safeTomorrow.length === 0 ? <EmptyState text="لا توجد مباريات غداً" /> :
-                            safeTomorrow.map(m => <MatchCard key={m._id} m={m} />)}
+                                safeTomorrow.map(m => <MatchCard key={m._id} m={m} />)}
                         </div>
                     </div>
                 </div>
             </div>
-
-            {/* CSS الأنيميشن الخاص بالـ Peek (النظرة الخاطفة) */}
-            <style>{`
-                /* بما أن الموقع RTL، سحب العنصر جهة اليمين (translateX موجب) 
-                  سيكشف جزءاً من العنصر الموجود على اليسار (مباريات الغد)
-                */
-                @keyframes peekScrollRTL {
-                    0% { transform: translateX(0); }
-                    10% { transform: translateX(45px); } /* شد قوي وسريع لكشف جزء من الغد */
-                    20% { transform: translateX(-5px); } /* ارتداد خفيف للجهة العكسية (Rubber-band) */
-                    25% { transform: translateX(0px); }  /* استقرار */
-                    100% { transform: translateX(0); }   /* انتظار حتى التكرار التالي */
-                }
-
-                .peek-scroll-anim {
-                    /* حركة تتكرر كل 3 ثواني للفت الانتباه بدون إزعاج */
-                    animation: peekScrollRTL 3s infinite cubic-bezier(0.25, 1, 0.5, 1);
-                }
-            `}</style>
         </section>
     );
 }
 
-/* ──────────────────────────────────────────
-   Styles
-────────────────────────────────────────── */
-const tabBtn = (active) => ({
-    flex: 1, padding: '6px 0', border: 'none', background: 'transparent',
-    color: active ? 'var(--gold)' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800,
-    cursor: 'pointer', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', 
-    justifyContent: 'center', gap: '6px', 
-    outline: 'none',
-    WebkitTapHighlightColor: 'transparent', 
-    userSelect: 'none'
-});
-
-const countBadge = (active) => ({
-    fontSize: '0.6rem', background: active ? 'var(--gold-dim)' : 'transparent',
-    color: active ? 'var(--gold)' : 'var(--text-muted)', padding: '1px 6px', borderRadius: '10px', fontWeight: 900
-});
-
-const panelStyle = { width: '100%', flexShrink: 0, scrollSnapAlign: 'center' }; 
-const listWrapper = { display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 1rem', maxWidth: '550px', margin: '0 auto' };
-
 const EmptyState = ({ text }) => (
-    <div style={{ 
-        padding: '1.25rem 1rem', textAlign: 'center', color: 'var(--text-muted)', 
-        fontSize: '0.8rem', fontWeight: 700, background: 'var(--bg-card)', 
-        borderRadius: '12px', border: '1px dashed var(--border)' 
-    }}>
-        {text}
-    </div>
+    <div className="msc-empty">{text}</div>
 );

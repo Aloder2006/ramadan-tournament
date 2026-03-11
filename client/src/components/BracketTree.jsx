@@ -1,219 +1,282 @@
-/**
- * BracketTree — SofaScore-style bracket with round tabs
- * Tabs: QF / SF / Final — clicking dims other rounds and scrolls/focuses the selected one
- * RTL layout: QF (right) → SF → Final (center-left)
- */
-import { useState, useRef } from 'react';
-import config from '../tournament.config';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('ar-EG', { weekday: 'short', day: '2-digit', month: 'short' }) : null;
-const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : null;
-
-function getWinner(match) {
-    if (!match || match.status !== 'Completed') return null;
-    if (match.hasPenalties) return match.penaltyScore1 > match.penaltyScore2 ? match.team1 : match.team2;
-    if (match.score1 > match.score2) return match.team1;
-    if (match.score2 > match.score1) return match.team2;
+/* ═══════════════════════════════════════════════
+   Helpers
+   ═══════════════════════════════════════════════ */
+const getWinner = (m) => {
+    if (!m || m.status !== 'Completed') return null;
+    if (m.hasPenalties) return m.penaltyScore1 > m.penaltyScore2 ? m.team1 : m.team2;
+    if (m.score1 > m.score2) return m.team1;
+    if (m.score2 > m.score1) return m.team2;
     return null;
-}
-function getLoser(match) {
-    if (!match || match.status !== 'Completed') return null;
-    if (match.hasPenalties) return match.penaltyScore1 > match.penaltyScore2 ? match.team2 : match.team1;
-    if (match.score1 > match.score2) return match.team2;
-    if (match.score2 > match.score1) return match.team1;
-    return null;
-}
+};
+const teamName = (t) => t?.name || '—';
+const teamId = (t) => t?._id || t;
 
-function buildBracket(bracketSlots, knockoutMatches) {
-    const slots = [...(bracketSlots || [])].sort((a, b) => a.position - b.position);
-    const slotTeam = (i) => slots[i]?.team || null;
-    const qfAll = knockoutMatches.filter(m => m.knockoutRound === 'ربع النهائي');
-    const sfAll = knockoutMatches.filter(m => m.knockoutRound === 'نصف النهائي');
-
-    const makeQF = (pos) => {
-        const m = qfAll.find(x => x.bracketPosition === pos) || qfAll[pos - 1] || null;
-        return { match: m, team1: m?.team1 || slotTeam((pos - 1) * 2), team2: m?.team2 || slotTeam((pos - 1) * 2 + 1), winner: getWinner(m), loser: getLoser(m) };
-    };
-    const qf = [makeQF(1), makeQF(2), makeQF(3), makeQF(4)];
-
-    const makeSF = (pos) => {
-        const m = sfAll.find(x => x.bracketPosition === pos) || sfAll[pos - 1] || null;
-        const autoT1 = pos === 1 ? qf[0].winner : qf[2].winner;
-        const autoT2 = pos === 1 ? qf[1].winner : qf[3].winner;
-        return { match: m, team1: m?.team1 || autoT1, team2: m?.team2 || autoT2, winner: getWinner(m), loser: getLoser(m) };
-    };
-    const sf = [makeSF(1), makeSF(2)];
-    const finalM = knockoutMatches.find(m => m.knockoutRound === 'النهائي') || null;
-    const thirdM = knockoutMatches.find(m => m.knockoutRound === 'نهائي الترتيب') || null;
-
-    return {
-        qf, sf,
-        final: { match: finalM, team1: finalM?.team1 || sf[0].winner, team2: finalM?.team2 || sf[1].winner, winner: getWinner(finalM) },
-        third: { match: thirdM, team1: thirdM?.team1 || sf[0].loser, team2: thirdM?.team2 || sf[1].loser, winner: getWinner(thirdM) },
-    };
-}
-
-function TeamRow({ team, score, isWinner, isPenaltyWinner, crown = false, placeholder = 'قيد الانتظار' }) {
-    const name = typeof team === 'object' ? team?.name : null;
-    const initial = name ? name.trim()[0] : '?';
-    const showScore = score !== null && score !== undefined;
-    return (
-        <div className={`bt-team-row ${isWinner ? 'bt-winner' : ''} ${!name ? 'bt-tbd' : ''}`}>
-            <div className={`bt-avatar ${isWinner ? 'bt-avatar-win' : ''}`}>{initial}</div>
-            <span className="bt-team-name">{name || placeholder}</span>
-            {isPenaltyWinner && <span className="bt-pen-icon" title="فائز بالجزاء">ج</span>}
-            <div className={`bt-score-box ${isWinner ? 'bt-score-win' : ''} ${!showScore ? 'bt-score-empty' : ''}`}>
-                {showScore ? score : '–'}
-                {crown && isWinner && <span className="bt-crown">*</span>}
-            </div>
-        </div>
-    );
-}
-
-function MatchCard({ team1, team2, match, isFinal = false, isThird = false }) {
-    const done = match?.status === 'Completed';
-    const penWin1 = done && match?.hasPenalties && match.penaltyScore1 > match.penaltyScore2;
-    const penWin2 = done && match?.hasPenalties && match.penaltyScore2 > match.penaltyScore1;
-    const w1 = done && (match.score1 > match.score2 || penWin1);
-    const w2 = done && (match.score2 > match.score1 || penWin2);
-    const hasBoth = team1 && team2;
-    return (
-        <div className={`bt-card ${isFinal ? 'bt-final' : ''} ${isThird ? 'bt-third' : ''} ${done ? 'bt-done' : ''} ${isFinal && done ? 'bt-champion' : ''} ${!hasBoth ? 'bt-ghost' : ''}`}>
-            {match?.matchDate && (
-                <div className="bt-date">
-                    {fmtDate(match.matchDate)}{fmtTime(match.matchDate) ? ` · ${fmtTime(match.matchDate)}` : ''}
-                </div>
-            )}
-            <TeamRow team={team1} score={match?.score1} isWinner={w1} isPenaltyWinner={penWin1} crown={isFinal} placeholder="قيد الانتظار" />
-            {done && match.hasPenalties && <div className="bt-penalties">{match.penaltyScore1} - {match.penaltyScore2} <small>جزاء</small></div>}
-            <div className="bt-divider" />
-            <TeamRow team={team2} score={match?.score2} isWinner={w2} isPenaltyWinner={penWin2} crown={isFinal} placeholder="قيد الانتظار" />
-            {!done && hasBoth && <div className="bt-pending">قادمة</div>}
-        </div>
-    );
-}
-
-const ROUND_TABS = [
-    { id: 'qf', label: 'ربع النهائي' },
-    { id: 'sf', label: 'نصف النهائي' },
-    { id: 'final', label: 'النهائي' },
+const ROUNDS = [
+    { key: 'ربع النهائي', label: 'ربع النهائي', icon: '④' },
+    { key: 'نصف النهائي', label: 'نصف النهائي', icon: '②' },
+    { key: 'النهائي', label: 'النهائي', icon: '🏆' },
 ];
 
-export default function BracketTree({ knockoutMatches = [], bracketSlots = [] }) {
-    const [activeRound, setActiveRound] = useState('qf');
-    const qfRef = useRef(null);
-    const sfRef = useRef(null);
-    const finRef = useRef(null);
+/* ═══════════════════════════════════════════════
+   Match Card — Glassmorphism
+   ═══════════════════════════════════════════════ */
+function MatchCard({ match, slotA, slotB, isChampionMatch }) {
+    const empty = !match && !slotA?.team && !slotB?.team;
 
-    const hasAnyData = bracketSlots.some(s => s.team) || knockoutMatches.length > 0;
-
-    if (!hasAnyData) {
+    if (empty) {
         return (
-            <div className="bt-empty">
-                <div className="bt-empty-icon">—</div>
-                <p className="bt-empty-text">لم يتم إعداد قرعة الإقصاء بعد</p>
-                <p className="bt-empty-sub">لوحة الإدارة ← الإقصاء ← توليد ربع النهائي</p>
+            <div className="bt2-card bt2-card-empty">
+                <div className="bt2-slot"><span className="bt2-await">⏳ بانتظار</span></div>
+                <div className="bt2-sep" />
+                <div className="bt2-slot"><span className="bt2-await">⏳ بانتظار</span></div>
             </div>
         );
     }
 
-    const { qf, sf, final, third } = buildBracket(bracketSlots, knockoutMatches);
+    const done = match?.status === 'Completed';
+    const winner = getWinner(match);
+    const wId = winner ? teamId(winner) : null;
+    const isW1 = done && wId && (wId === teamId(match?.team1));
+    const isW2 = done && wId && (wId === teamId(match?.team2));
 
-    const handleTabClick = (id) => {
-        setActiveRound(id);
-        const refs = { qf: qfRef, sf: sfRef, final: finRef };
-        refs[id]?.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    };
+    const t1 = match ? teamName(match.team1) : (slotA?.team ? teamName(slotA.team) : '—');
+    const t2 = match ? teamName(match.team2) : (slotB?.team ? teamName(slotB.team) : '—');
 
-    const roundClass = (id) => {
-        if (activeRound === id) return 'bt-active';
-        return 'bt-dimmed';
-    };
+    const dateStr = match?.matchDate
+        ? new Date(match.matchDate).toLocaleDateString('ar-EG', { weekday: 'short', day: '2-digit', month: 'short' })
+        : null;
+    const timeStr = match?.matchDate
+        ? new Date(match.matchDate).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+        : null;
+
+    const isChampion = isChampionMatch && done && winner;
 
     return (
-        <div>
-            {/* Round tabs */}
-            <div className="bt-round-tabs">
-                {ROUND_TABS.map(t => (
-                    <button
-                        key={t.id}
-                        className={`bt-round-tab ${activeRound === t.id ? 'bt-tab-active' : ''}`}
-                        onClick={() => handleTabClick(t.id)}
-                    >
-                        {t.label}
-                    </button>
-                ))}
+        <div className={`bt2-card ${done ? 'bt2-card-done' : ''} ${isChampion ? 'bt2-card-champion' : ''}`}>
+            <div className={`bt2-slot ${isW1 ? 'bt2-slot-w' : ''} ${done && !isW1 ? 'bt2-slot-l' : ''}`}>
+                <div className="bt2-team">
+                    <span className="bt2-tname">{t1}</span>
+                    {isW1 && <span className="bt2-crown-mini">👑</span>}
+                </div>
+                <span className={`bt2-sc ${isW1 ? 'bt2-sc-w' : ''}`}>{done ? match.score1 : ''}</span>
             </div>
 
-            {/* Bracket tree */}
-            <div className="bt-scroll">
-                {/* Top half: QF1, QF2 → SF1 → Final */}
-                <div className="bt-bracket">
-                    <div className={`bt-round ${roundClass('qf')}`} ref={qfRef}>
-                        <div className="bt-round-label">ربع النهائي</div>
-                        <div className="bt-col">
-                            <div className="bt-match-wrap bt-top"><MatchCard {...qf[0]} /></div>
-                            <div className="bt-spacer" />
-                            <div className="bt-match-wrap"><MatchCard {...qf[1]} /></div>
-                        </div>
-                    </div>
-                    <div className="bt-connector-col">
-                        <div className="bt-wire bt-wire-top" />
-                        <div className="bt-wire-gap" />
-                        <div className="bt-wire bt-wire-bot" />
-                    </div>
-                    <div className={`bt-round ${roundClass('sf')}`} ref={sfRef}>
-                        <div className="bt-round-label">نصف النهائي</div>
-                        <div className="bt-col bt-sf-col">
-                            <div className="bt-match-wrap bt-sf-top"><MatchCard {...sf[0]} /></div>
-                            <div className="bt-sf-spacer" />
-                        </div>
-                    </div>
-                    <div className="bt-connector-col bt-connector-final">
-                        <div className="bt-wire bt-wire-top" />
-                        <div className="bt-wire-gap bt-gap-lg" />
-                        <div className="bt-wire bt-wire-bot" />
-                    </div>
-                    <div className={`bt-round bt-final-round ${roundClass('final')}`} ref={finRef}>
-                        <div className="bt-final-col">
-                            <div>
-                                <div className="bt-round-label bt-round-gold">النهائي</div>
-                                <div className="bt-match-wrap"><MatchCard {...final} isFinal /></div>
+            <div className="bt2-sep">
+                {match?.hasPenalties && (
+                    <span className="bt2-pen">⚡ ركلات ترجيح {match.penaltyScore1} – {match.penaltyScore2}</span>
+                )}
+                {!done && dateStr && (
+                    <span className="bt2-date-chip">{dateStr} • {timeStr}</span>
+                )}
+            </div>
+
+            <div className={`bt2-slot ${isW2 ? 'bt2-slot-w' : ''} ${done && !isW2 ? 'bt2-slot-l' : ''}`}>
+                <div className="bt2-team">
+                    <span className="bt2-tname">{t2}</span>
+                    {isW2 && <span className="bt2-crown-mini">👑</span>}
+                </div>
+                <span className={`bt2-sc ${isW2 ? 'bt2-sc-w' : ''}`}>{done ? match.score2 : ''}</span>
+            </div>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════
+   Champion Celebration
+   ═══════════════════════════════════════════════ */
+function ChampionBanner({ match }) {
+    const winner = getWinner(match);
+    if (!winner) return null;
+    const name = teamName(winner);
+    return (
+        <div className="bt2-champ">
+            <div className="bt2-champ-glow" />
+            <div className="bt2-champ-glow bt2-champ-glow2" />
+            <div className="bt2-champ-inner">
+                <div className="bt2-champ-crown">👑</div>
+                <div className="bt2-champ-av">{name[0]}</div>
+                <div className="bt2-champ-label">بطل البطولة</div>
+                <div className="bt2-champ-name">{name}</div>
+                <div className="bt2-champ-stars">⭐ ⭐ ⭐</div>
+            </div>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN: BracketTree
+   ═══════════════════════════════════════════════ */
+export default function BracketTree({ knockoutMatches = [], bracketSlots = [] }) {
+    const [activeTab, setActiveTab] = useState(0);
+    const scrollRef = useRef(null);
+    const roundRefs = useRef([]);
+    const tabClickRef = useRef(false);
+    const rafScrollRef = useRef(null);
+
+    const matchesByRound = useMemo(() => {
+        const map = {};
+        for (const r of ROUNDS) {
+            map[r.key] = knockoutMatches
+                .filter(m => m.knockoutRound === r.key)
+                .sort((a, b) => (a.bracketPosition || 0) - (b.bracketPosition || 0));
+        }
+        return map;
+    }, [knockoutMatches]);
+
+    const qf = matchesByRound['ربع النهائي'];
+    const sf = matchesByRound['نصف النهائي'];
+    const final = matchesByRound['النهائي'];
+    const thirdPlace = knockoutMatches.find(m => m.knockoutRound === 'نهائي الترتيب');
+    const finalMatch = final[0] || null;
+    const hasChampion = finalMatch?.status === 'Completed' && getWinner(finalMatch);
+    const qfSlotPairs = [[1, 2], [3, 4], [5, 6], [7, 8]];
+
+    // Auto-detect active round on mount
+    useEffect(() => {
+        if (final.length > 0 && final.some(m => m.status !== 'Completed' || getWinner(m))) setActiveTab(2);
+        else if (sf.length > 0 && sf.some(m => m.status !== 'Completed')) setActiveTab(1);
+        else setActiveTab(0);
+    }, [qf, sf, final]);
+
+    // Tab click → smooth scroll to round
+    const scrollToRound = useCallback((index) => {
+        const el = roundRefs.current[index];
+        const container = scrollRef.current;
+        if (!el || !container) return;
+
+        tabClickRef.current = true;
+        setActiveTab(index);
+
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const scrollLeft = container.scrollLeft + (elRect.left - containerRect.left)
+            - (containerRect.width / 2 - elRect.width / 2);
+
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        setTimeout(() => { tabClickRef.current = false; }, 700);
+    }, []);
+
+    // Scroll → tab sync (rAF-debounced)
+    useEffect(() => {
+        const container = scrollRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            if (tabClickRef.current) return;
+            if (rafScrollRef.current) cancelAnimationFrame(rafScrollRef.current);
+            rafScrollRef.current = requestAnimationFrame(() => {
+                const { scrollLeft, scrollWidth, clientWidth } = container;
+                if (scrollWidth <= clientWidth) return;
+
+                let bestIdx = 0;
+                let bestDist = Infinity;
+                const containerCenter = scrollLeft + clientWidth / 2;
+
+                roundRefs.current.forEach((ref, i) => {
+                    if (!ref) return;
+                    const elCenter = ref.offsetLeft + ref.offsetWidth / 2;
+                    const dist = Math.abs(containerCenter - elCenter);
+                    if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+                });
+                setActiveTab(bestIdx);
+            });
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            if (rafScrollRef.current) cancelAnimationFrame(rafScrollRef.current);
+        };
+    }, [knockoutMatches, bracketSlots]);
+
+    const setRoundRef = (i) => (el) => { roundRefs.current[i] = el; };
+
+    return (
+        <div className="bt2-root">
+            {hasChampion && <ChampionBanner match={finalMatch} />}
+
+            {/* Sticky Tabs */}
+            <div className="bt2-tabs-bar">
+                <div className="bt2-tabs">
+                    {ROUNDS.map((r, i) => {
+                        const count = matchesByRound[r.key].length;
+                        const active = activeTab === i;
+                        return (
+                            <button
+                                key={r.key}
+                                className={`bt2-tab ${active ? 'bt2-tab-active' : ''}`}
+                                onClick={() => scrollToRound(i)}
+                            >
+                                <span className="bt2-tab-icon">{r.icon}</span>
+                                <span className="bt2-tab-label">{r.label}</span>
+                                {count > 0 && (
+                                    <span className={`bt2-tab-count ${active ? 'bt2-tab-count-active' : ''}`}>
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Scrollable Bracket */}
+            <div className="bt2-scroll-container" ref={scrollRef}>
+                {/* Quarter-Finals */}
+                <div className="bt2-round" ref={setRoundRef(0)} data-round-index="0">
+                    <div className="bt2-round-title">ربع النهائي</div>
+                    <div className="bt2-round-cards">
+                        {qf.length > 0 ? qf.map((m, i) => (
+                            <div key={m._id} className="bt2-card-anchor">
+                                <MatchCard match={m} />
                             </div>
-                            <div className="bt-round-sep" />
-                            <div>
-                                <div className="bt-round-label bt-round-bronze">المركز الثالث</div>
-                                <div className="bt-match-wrap"><MatchCard {...third} isThird /></div>
-                            </div>
-                        </div>
+                        )) : qfSlotPairs.map((pair, i) => {
+                            const slotA = bracketSlots.find(s => s.position === pair[0]);
+                            const slotB = bracketSlots.find(s => s.position === pair[1]);
+                            return (
+                                <div key={i} className="bt2-card-anchor">
+                                    <MatchCard slotA={slotA} slotB={slotB} />
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Bottom half: QF3, QF4 → SF2 */}
-                <div className="bt-bracket bt-bracket-bottom">
-                    <div className={`bt-round ${roundClass('qf')}`}>
-                        <div className="bt-round-label bt-invisible">.</div>
-                        <div className="bt-col">
-                            <div className="bt-match-wrap"><MatchCard {...qf[2]} /></div>
-                            <div className="bt-spacer" />
-                            <div className="bt-match-wrap"><MatchCard {...qf[3]} /></div>
+                {/* Semi-Finals */}
+                <div className="bt2-round bt2-round-sf" ref={setRoundRef(1)} data-round-index="1">
+                    <div className="bt2-round-title">نصف النهائي</div>
+                    <div className="bt2-round-cards bt2-round-cards-sf">
+                        {sf.length > 0 ? sf.map((m, i) => (
+                            <div key={m._id} className="bt2-card-anchor">
+                                <MatchCard match={m} />
+                            </div>
+                        )) : Array.from({ length: 2 }).map((_, i) => (
+                            <div key={i} className="bt2-card-anchor">
+                                <MatchCard />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Final */}
+                <div className="bt2-round bt2-round-final" ref={setRoundRef(2)} data-round-index="2">
+                    <div className="bt2-round-title">🏆 النهائي</div>
+                    <div className="bt2-round-cards bt2-round-cards-final">
+                        <div className="bt2-card-anchor">
+                            <MatchCard match={finalMatch} isChampionMatch />
                         </div>
+                        {thirdPlace && (
+                            <div className="bt2-third">
+                                <div className="bt2-third-label">
+                                    <span className="bt2-third-icon">🥉</span>
+                                    مباراة تحديد المركز الثالث
+                                </div>
+                                <MatchCard match={thirdPlace} />
+                            </div>
+                        )}
                     </div>
-                    <div className="bt-connector-col">
-                        <div className="bt-wire bt-wire-top" />
-                        <div className="bt-wire-gap" />
-                        <div className="bt-wire bt-wire-bot" />
-                    </div>
-                    <div className={`bt-round ${roundClass('sf')}`}>
-                        <div className="bt-round-label bt-invisible">.</div>
-                        <div className="bt-col bt-sf-col">
-                            <div className="bt-match-wrap bt-sf-bot"><MatchCard {...sf[1]} /></div>
-                        </div>
-                    </div>
-                    <div className="bt-connector-col bt-connector-final bt-invisible">
-                        <div style={{ width: '40px' }} />
-                    </div>
-                    <div className={`bt-round bt-final-round bt-invisible-round ${roundClass('final')}`} />
                 </div>
             </div>
         </div>

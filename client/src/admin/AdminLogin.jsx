@@ -6,6 +6,7 @@ export default function AdminLogin({ onSuccess }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPass, setShowPass] = useState(false);
+    const [shake, setShake] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -17,32 +18,50 @@ export default function AdminLogin({ onSuccess }) {
                 sessionStorage.setItem('adminToken', res.token);
                 onSuccess();
             } else {
-                setError(res.message || 'كلمة السر غير صحيحة');
+                triggerError(res.message || 'كلمة السر غير صحيحة');
             }
-        } catch {
-            setError('تعذر الاتصال بالخادم');
+        } catch (err) {
+            triggerError(err.message || 'تعذر الاتصال بالخادم');
         } finally {
             setLoading(false);
         }
     };
 
+    const triggerError = (msg) => {
+        setError(msg);
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+    };
+
     return (
-        <div className="login-screen">
-            <div className="login-card">
+        <div className="adm-login-screen">
+            {/* Floating particles */}
+            <div className="adm-login-particles">
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="adm-particle" style={{ '--i': i }} />
+                ))}
+            </div>
+
+            <div className={`adm-login-card ${shake ? 'adm-shake' : ''}`}>
+                {/* Glow ring */}
+                <div className="adm-login-glow" />
+
                 {/* Icon */}
-                <div className="login-icon">🔒</div>
+                <div className="adm-login-icon-wrap">
+                    <div className="adm-login-icon">🔐</div>
+                </div>
 
                 {/* Title */}
-                <h1 className="login-title">لوحة الإدارة</h1>
-                <p className="login-sub">أدخل كلمة السر للمتابعة</p>
+                <h1 className="adm-login-title">لوحة الإدارة</h1>
+                <p className="adm-login-sub">أدخل كلمة السر للمتابعة</p>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="login-form">
-                    <div className="login-input-wrapper">
-                        <span className="login-input-icon">🔑</span>
+                <form onSubmit={handleSubmit} className="adm-login-form">
+                    <div className="adm-login-field">
+                        <span className="adm-login-field-icon">🔑</span>
                         <input
                             type={showPass ? 'text' : 'password'}
-                            className="form-input"
+                            className="adm-login-input"
                             placeholder="كلمة السر..."
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -50,7 +69,7 @@ export default function AdminLogin({ onSuccess }) {
                         />
                         <button
                             type="button"
-                            className="login-toggle-pass"
+                            className="adm-login-reveal"
                             onClick={() => setShowPass(!showPass)}
                             tabIndex={-1}
                         >
@@ -59,24 +78,26 @@ export default function AdminLogin({ onSuccess }) {
                     </div>
 
                     <button
-                        className="login-btn"
+                        className="adm-login-btn"
                         type="submit"
                         disabled={loading || !password.trim()}
                     >
-                        {loading
-                            ? <span className="btn-loader" />
-                            : 'دخول'
-                        }
+                        {loading ? <span className="adm-btn-spinner" /> : 'دخول'}
                     </button>
                 </form>
 
                 {/* Error */}
-                {error && <p className="login-error">{error}</p>}
+                {error && (
+                    <div className="adm-login-error">
+                        <span className="adm-err-icon">⚠️</span>
+                        {error}
+                    </div>
+                )}
 
                 {/* Footer */}
-                <div className="login-footer">
+                <div className="adm-login-footer">
                     <span>بطولة رمضان</span>
-                    <span className="login-footer-dot" />
+                    <span className="adm-login-dot" />
                     <span>لوحة التحكم</span>
                 </div>
             </div>

@@ -1,18 +1,36 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import HomePage from './pages/HomePage';
-import AdminPage from './pages/AdminPage';
-import AdminLogin from './pages/AdminLogin';
 import { recordVisit } from './services/api';
+
+import { AdminProvider } from './admin/AdminContext';
+
+// Lazy-load admin UI components
+const AdminLayout = lazy(() => import('./admin/AdminLayout'));
+const AdminLogin = lazy(() => import('./admin/AdminLogin'));
+
+const LoadingScreen = () => (
+  <div className="loading-screen"><div className="loader" /><p>جاري التحميل...</p></div>
+);
 
 function ProtectedAdminRoute() {
   const [authenticated, setAuthenticated] = useState(
-    () => sessionStorage.getItem('adminToken') === 'ramadan-admin-ok'
+    () => !!sessionStorage.getItem('adminToken')
   );
   if (!authenticated) {
-    return <AdminLogin onSuccess={() => setAuthenticated(true)} />;
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <AdminLogin onSuccess={() => setAuthenticated(true)} />
+      </Suspense>
+    );
   }
-  return <AdminPage onLogout={() => { sessionStorage.removeItem('adminToken'); setAuthenticated(false); }} />;
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <AdminProvider>
+        <AdminLayout onLogout={() => { sessionStorage.removeItem('adminToken'); setAuthenticated(false); }} />
+      </AdminProvider>
+    </Suspense>
+  );
 }
 
 export default function App() {
@@ -21,7 +39,6 @@ export default function App() {
       const lastVisitTime = localStorage.getItem('lastVisitTime');
       const ONE_HOUR = 60 * 60 * 1000;
       const now = Date.now();
-
       if (!lastVisitTime || now - parseInt(lastVisitTime, 10) > ONE_HOUR) {
         try {
           await recordVisit();
@@ -31,7 +48,6 @@ export default function App() {
         }
       }
     };
-
     checkVisit();
   }, []);
 
