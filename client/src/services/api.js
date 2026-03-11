@@ -67,13 +67,13 @@ export const updateSettings = (data) =>
 export const recordVisit = () =>
     request('/api/settings/visit', { method: 'POST' });
 
-// ── Reset (admin) ──────────────────────────────────────────────
-export const resetGroups = () =>
-    request('/api/settings/reset/groups', { method: 'DELETE', headers: authHeaders() });
-export const resetKnockout = () =>
-    request('/api/settings/reset/knockout', { method: 'DELETE', headers: authHeaders() });
-export const resetAll = () =>
-    request('/api/settings/reset/all', { method: 'DELETE', headers: authHeaders() });
+// ── Reset (admin, requires password) ────────────────────────────
+export const resetGroups = (password) =>
+    request('/api/settings/reset/groups', { method: 'DELETE', headers: authHeaders(), body: JSON.stringify({ password }) });
+export const resetKnockout = (password) =>
+    request('/api/settings/reset/knockout', { method: 'DELETE', headers: authHeaders(), body: JSON.stringify({ password }) });
+export const resetAll = (password) =>
+    request('/api/settings/reset/all', { method: 'DELETE', headers: authHeaders(), body: JSON.stringify({ password }) });
 
 // ── Rankings / Knockout ────────────────────────────────────────
 export const getRankings = () => request('/api/settings/rankings');

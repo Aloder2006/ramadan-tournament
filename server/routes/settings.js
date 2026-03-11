@@ -312,6 +312,10 @@ router.post('/visit', rateLimitVisit, async (req, res) => {
 // DELETE /api/settings/reset/groups
 router.delete('/reset/groups', verifyAdmin, async (req, res) => {
     try {
+        const { password } = req.body;
+        if (!password || password !== process.env.RESET_PASSWORD) {
+            return res.status(403).json({ message: 'كلمة المرور غير صحيحة' });
+        }
         await Match.deleteMany({ phase: { $ne: 'knockout' } });
         await Team.updateMany({}, {
             $set: { played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, points: 0 }
@@ -323,6 +327,10 @@ router.delete('/reset/groups', verifyAdmin, async (req, res) => {
 // DELETE /api/settings/reset/knockout
 router.delete('/reset/knockout', verifyAdmin, async (req, res) => {
     try {
+        const { password } = req.body;
+        if (!password || password !== process.env.RESET_PASSWORD) {
+            return res.status(403).json({ message: 'كلمة المرور غير صحيحة' });
+        }
         await Match.deleteMany({ phase: 'knockout' });
         const settings = await Settings.getSettings();
         settings.qualifiedTeams = [];
@@ -336,6 +344,10 @@ router.delete('/reset/knockout', verifyAdmin, async (req, res) => {
 // DELETE /api/settings/reset/all
 router.delete('/reset/all', verifyAdmin, async (req, res) => {
     try {
+        const { password } = req.body;
+        if (!password || password !== process.env.RESET_PASSWORD) {
+            return res.status(403).json({ message: 'كلمة المرور غير صحيحة' });
+        }
         await Match.deleteMany({});
         await Team.deleteMany({});
         const settings = await Settings.getSettings();

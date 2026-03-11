@@ -8,22 +8,26 @@ export default function DangerZone() {
 
     const handleReset = async (type) => {
         const msgs = {
-            groups: 'سيتم حذف جميع مباريات المجموعات وإعادة تصفير النقاط. اكتب "تأكيد"',
-            knockout: 'سيتم حذف جميع مباريات الإقصاء وإفراغ القرعة. اكتب "تأكيد"',
-            all: '⚠️ تحذير خطير! سيتم حذف كل شيء والبدء من الصفر. اكتب "تأكيد"',
+            groups: 'سيتم حذف جميع مباريات المجموعات وإعادة تصفير النقاط.',
+            knockout: 'سيتم حذف جميع مباريات الإقصاء وإفراغ القرعة.',
+            all: '⚠️ تحذير خطير! سيتم حذف كل شيء والبدء من الصفر.',
         };
-        const conf = window.prompt(msgs[type]);
-        if (conf !== 'تأكيد') return;
+
+        if (!window.confirm(msgs[type] + '\n\nهل أنت متأكد؟')) return;
+
+        const password = window.prompt('أدخل كلمة مرور الأدمن للتأكيد:');
+        if (!password) return;
 
         setResetting(true);
         try {
-            if (type === 'groups') await resetGroups();
-            if (type === 'knockout') await resetKnockout();
-            if (type === 'all') await resetAll();
+            if (type === 'groups') await resetGroups(password);
+            if (type === 'knockout') await resetKnockout(password);
+            if (type === 'all') await resetAll(password);
             await fetchAll();
             alert('✅ تم إعادة التعيين بنجاح');
-        } catch (e) { alert('حدث خطأ: ' + e.message); }
-        finally { setResetting(false); }
+        } catch (e) {
+            alert('❌ ' + (e.message || 'حدث خطأ'));
+        } finally { setResetting(false); }
     };
 
     const cards = [
@@ -37,7 +41,7 @@ export default function DangerZone() {
             <div className="adm-panel-header">
                 <h2 className="adm-panel-title" style={{ color: 'var(--danger)' }}>⚠️ منطقة الخطر</h2>
             </div>
-            <p className="adm-panel-desc">الإجراءات هنا لا يمكن التراجع عنها.</p>
+            <p className="adm-panel-desc">الإجراءات هنا لا يمكن التراجع عنها. مطلوب كلمة مرور الأدمن.</p>
 
             <div className="adm-danger-grid">
                 {cards.map(c => (
