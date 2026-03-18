@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import HomePage from './pages/HomePage';
 import PredictPage from './pages/PredictPage';
 import { recordVisit } from './services/api';
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/knockout" element={<Navigate to="/" replace />} />
         <Route path="/admin" element={<ProtectedAdminRoute />} />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
