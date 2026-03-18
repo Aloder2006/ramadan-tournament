@@ -159,7 +159,7 @@ export default function PredictionModal({ finalMatchStatus, team1Name, team2Name
                                 className="pred-phone-input"
                                 value={phone}
                                 onChange={e => setPhone(e.target.value)}
-                                placeholder="05XXXXXXXX"
+                                placeholder="01XXXXXXXX"
                                 required
                                 disabled={isEdit}
                             />
