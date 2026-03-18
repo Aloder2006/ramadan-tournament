@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import HomePage from './pages/HomePage';
+import PredictPage from './pages/PredictPage';
 import { recordVisit } from './services/api';
 
 import { AdminProvider } from './admin/AdminContext';
@@ -55,6 +56,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/predict" element={<PredictPage />} />
         <Route path="/knockout" element={<Navigate to="/" replace />} />
         <Route path="/admin" element={<ProtectedAdminRoute />} />
       </Routes>

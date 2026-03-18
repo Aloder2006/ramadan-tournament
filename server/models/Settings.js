@@ -37,6 +37,9 @@ const settingsSchema = new mongoose.Schema({
 
     // ── Analytics ──
     visitorsCount: { type: Number, default: 0 },
+
+    // ── Final Match Prediction Control ──
+    finalMatchStatus: { type: String, enum: ['open', 'started', 'ended'], default: 'open' },
 });
 
 settingsSchema.statics.getSettings = async function () {

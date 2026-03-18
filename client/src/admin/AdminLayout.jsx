@@ -8,11 +8,13 @@ import KnockoutPanel from './panels/KnockoutPanel';
 import ExportPanel from './panels/ExportPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import DangerZone from './panels/DangerZone';
+import PredictionsPanel from './panels/PredictionsPanel';
 
 const TABS = [
     { id: 'teams', icon: '👥', label: 'الفرق' },
     { id: 'group-matches', icon: '⚽', label: 'المباريات' },
     { id: 'knockout', icon: '🏆', label: 'الإقصاء' },
+    { id: 'predictions', icon: '🎯', label: 'التوقعات' },
     { id: 'export', icon: '📸', label: 'تصدير' },
     { id: 'settings', icon: '⚙️', label: 'الإعدادات' },
     { id: 'danger', icon: '⚠️', label: 'إعادة تعيين' },
@@ -41,6 +43,7 @@ export default function AdminLayout({ onLogout }) {
             case 'teams': return <TeamsPanel />;
             case 'group-matches': return <GroupMatchesPanel />;
             case 'knockout': return <KnockoutPanel />;
+            case 'predictions': return <PredictionsPanel />;
             case 'export': return <ExportPanel />;
             case 'settings': return <SettingsPanel />;
             case 'danger': return <DangerZone />;

@@ -305,6 +305,20 @@ router.post('/visit', rateLimitVisit, async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
+// PUT /api/settings/final-match-status
+router.put('/final-match-status', verifyAdmin, async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['open', 'started', 'ended'].includes(status)) {
+            return res.status(400).json({ message: 'حالة غير صالحة' });
+        }
+        const settings = await Settings.getSettings();
+        settings.finalMatchStatus = status;
+        await settings.save();
+        res.json({ finalMatchStatus: settings.finalMatchStatus });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
 // ═══════════════════════════════════════════════════════
 // RESET ROUTES
 // ═══════════════════════════════════════════════════════

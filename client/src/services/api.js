@@ -79,3 +79,15 @@ export const resetAll = (password) =>
 export const getRankings = () => request('/api/settings/rankings');
 export const generateKnockout = () =>
     request('/api/settings/generate-knockout', { method: 'POST', headers: authHeaders() });
+
+// ── Predictions ────────────────────────────────────────────────
+export const submitPrediction = (data) =>
+    request('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+export const updatePrediction = (id, data) =>
+    request(`/api/predictions/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+export const getPredictions = () =>
+    request('/api/predictions', { headers: authHeaders() });
+export const deletePrediction = (id) =>
+    request(`/api/predictions/${id}`, { method: 'DELETE', headers: authHeaders() });
+export const setFinalMatchStatus = (status) =>
+    request('/api/settings/final-match-status', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ status }) });

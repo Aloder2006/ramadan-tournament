@@ -5,10 +5,13 @@ import GroupTable from '../components/GroupTable';
 import MatchHistory from '../components/MatchHistory';
 import BracketTree from '../components/BracketTree';
 import Skeleton from '../components/Skeleton';
+import PredictionModal from '../components/PredictionModal';
 import { InstallBanner } from '../hooks/useInstallPrompt';
 import { applySettingsColors } from '../admin/panels/SettingsPanel';
 import { Instagram, Facebook } from 'lucide-react';
 import config from '../tournament.config';
+
+const LS_PRED_KEY = 'ramadan_prediction';
 
 // Dynamic page title for SEO
 function useDocumentTitle(title) {
@@ -28,6 +31,7 @@ export default function HomePage() {
     const [settings, setSettings] = useState(null);
     const [knockoutMatches, setKnockoutMatches] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showPredModal, setShowPredModal] = useState(false);
 
     const fetchData = useCallback(async (isInitial = false) => {
         try {
@@ -49,8 +53,21 @@ export default function HomePage() {
         finally { if (isInitial) setLoading(false); }
     }, []);
 
-    // Initial load
-    useEffect(() => { fetchData(true); }, [fetchData]);
+    // Initial load + auto-show prediction modal
+    useEffect(() => {
+        fetchData(true);
+    }, [fetchData]);
+
+    // Auto-show prediction modal on first visit (if no stored prediction)
+    useEffect(() => {
+        if (!loading) {
+            const stored = localStorage.getItem(LS_PRED_KEY);
+            const finalStatus = settings?.finalMatchStatus || 'open';
+            if (!stored && finalStatus === 'open') {
+                setShowPredModal(true);
+            }
+        }
+    }, [loading, settings]);
 
     // Auto-refresh every 60 seconds
     useEffect(() => {
@@ -83,6 +100,8 @@ export default function HomePage() {
     }
 
     const finalMatch = knockoutMatches.find(m => m.knockoutRound === 'النهائي' && m.status === 'Completed');
+    // Also check for a pending final to show team names in predictions
+    const finalMatchAny = knockoutMatches.find(m => m.knockoutRound === 'النهائي');
     const champion = finalMatch
         ? finalMatch.hasPenalties
             ? (finalMatch.penaltyScore1 > finalMatch.penaltyScore2 ? finalMatch.team1 : finalMatch.team2)
@@ -169,6 +188,29 @@ export default function HomePage() {
                     </div>
                 )}
             </main>
+
+            {showPredModal && (
+                <PredictionModal
+                    finalMatchStatus={settings?.finalMatchStatus || 'open'}
+                    team1Name={finalMatchAny?.team1?.name}
+                    team2Name={finalMatchAny?.team2?.name}
+                    onClose={() => setShowPredModal(false)}
+                />
+            )}
+
+            {/* ── FLOATING PREDICTION BUTTON ── */}
+            {(settings?.finalMatchStatus === 'open' || localStorage.getItem(LS_PRED_KEY)) && (
+                <button
+                    className="pred-float-btn"
+                    onClick={() => setShowPredModal(true)}
+                    title="توقعاتي للنهائي"
+                >
+                    <span className="pred-float-icon">🎯</span>
+                    <span className="pred-float-label">
+                        {localStorage.getItem(LS_PRED_KEY) ? 'توقعي' : 'توقع النتيجة'}
+                    </span>
+                </button>
+            )}
 
             {/* ── INSTALL BANNER ── */}
             <InstallBanner />

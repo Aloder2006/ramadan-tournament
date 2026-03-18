@@ -28,6 +28,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/teams', require('./routes/teams'));
 app.use('/api/matches', require('./routes/matches'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/predictions', require('./routes/predictions'));
 
 // Serve React production build (when running in prod / single-host)
 const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
