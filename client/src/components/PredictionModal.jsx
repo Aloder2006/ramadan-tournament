@@ -164,7 +164,7 @@ export default function PredictionModal({ finalMatchStatus, team1Name, team2Name
                                 disabled={isEdit}
                             />
                             {isEdit && (
-                                <span className="pred-phone-note">لا يمكن تغيير الرقم — لتسجيل رقم آخر، امسح بيانات المتصفح</span>
+                                <span className="pred-phone-note">لا يمكن تغيير الرقم</span>
                             )}
                         </div>
 
